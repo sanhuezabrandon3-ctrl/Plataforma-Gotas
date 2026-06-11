@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gotas Comunicación SPA — Plataforma de Gestión</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #f7f6f2; --text: #1a1916; --text2: #6b6a66; --text3: #a8a6a0;
+    --border: #e8e6e0; --border2: #d4d2cc; --info: #185FA5; --danger: #A32D2D;
+    --radius: 8px; --radius-sm: 5px; --mono: 'Courier New', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1c1c1e; --bg2:#2c2c2e; --text:#f5f5f0; --text2:#a8a6a0; --text3:#6b6a66; --border:#3a3a3c; --border2:#48484a; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
+  #app { display: flex; height: 100vh; overflow: hidden; }
+  #sidebar { width: 220px; background: var(--bg2); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+  #sidebar .brand { padding: 14px 16px; border-bottom: 0.5px solid var(--border); }
+  #sidebar .brand .logo { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+  #sidebar .brand .logo i { font-size: 18px; color: var(--info); }
+  #sidebar .brand .sub { font-size: 10px; color: var(--text2); margin-top: 3px; }
+  #sidebar nav { flex: 1; padding: 8px; overflow-y: auto; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text2); font-size: 13px; margin-bottom: 2px; border: 0.5px solid transparent; text-decoration: none; }
+  .nav-item:hover { background: var(--bg); }
+  .nav-item.active { background: var(--bg); color: var(--text); border-color: var(--border); }
+  .nav-item i { font-size: 16px; }
+  .nav-section { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; padding: 12px 12px 4px; }
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #topbar { padding: 12px 20px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--bg); }
+  #topbar h1 { font-size: 16px; font-weight: 500; }
+  #topbar .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #content { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { text-align: left; padding: 8px 12px; font-weight: 500; font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+  .data-table td { padding: 9px 12px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg2); }
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: #EAF3DE; color: #3B6D11; }
+  .badge-amber { background: #FAEEDA; color: #854F0B; }
+  .badge-blue { background: #E6F1FB; color: #185FA5; }
+  .badge-red { background: #FCEBEB; color: #A32D2D; }
+  .badge-gray { background: #F1EFE8; color: #5F5E5A; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  .field input, .field select, .field textarea { border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 13px; background: var(--bg); color: var(--text); width: 100%; }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; border: 0.5px solid var(--border); }
+  .stat-card .lbl { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .stat-card .val { font-size: 22px; font-weight: 500; }
+  .stat-card .sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal { background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 24px; width: 600px; max-width: 95vw; max-height: 88vh; overflow-y: auto; }
+  .modal h2 { font-size: 15px; font-weight: 500; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 0.5px solid var(--border); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); }
+  .btn:hover { background: var(--bg2); }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .search-box, .filter-select { border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 6px 12px; font-size: 13px; background: var(--bg2); color: var(--text); }
+  .search-box { width: 220px; }
+  .pager { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--text2); }
+  /* OT OFICIAL */
+  .ot-wrap { background: white; color: #111; font-family: Arial, sans-serif; font-size: 11px; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; max-width: 780px; }
+  .ot-header { background: #1a3a6b; color: white; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .ot-header .empresa { font-size: 14px; font-weight: 700; }
+  .ot-header .sub { font-size: 10px; opacity: 0.85; margin-top: 2px; }
+  .ot-header .num-orden { text-align: right; }
+  .ot-header .num-orden .label { font-size: 10px; opacity: 0.8; }
+  .ot-header .num-orden .num { font-size: 20px; font-weight: 700; }
+  .ot-tipos { display: flex; gap: 12px; padding: 6px 14px; border-bottom: 1px solid #ddd; background: #f5f7fa; font-size: 10px; }
+  .ot-tipo-box { display: flex; align-items: center; gap: 5px; }
+  .ot-tipo-box .check { width: 13px; height: 13px; border: 1px solid #666; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #1a3a6b; }
+  .ot-info { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #ddd; }
+  .ot-info-col { padding: 8px 14px; }
+  .ot-info-col:first-child { border-right: 1px solid #ddd; }
+  .ot-kv { display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px; font-size: 11px; }
+  .ot-kv .k { color: #555; white-space: nowrap; }
+  .ot-kv .v { font-weight: 600; border-bottom: 1px solid #aaa; flex: 1; min-height: 15px; }
+  .ot-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .ot-table th { background: #1a3a6b; color: white; padding: 5px 7px; text-align: left; font-weight: 600; border: 1px solid #1a3a6b; }
+  .ot-table td { padding: 4px 7px; border: 1px solid #ddd; min-height: 18px; }
+  .ot-table tr:nth-child(even) td { background: #f9f9f9; }
+  .ot-obs { padding: 7px 14px; border-top: 1px solid #ddd; }
+  .ot-obs .label { font-weight: 600; font-size: 10px; color: #555; margin-bottom: 3px; }
+  .ot-obs .val { border: 1px solid #ddd; min-height: 38px; padding: 4px; font-size: 11px; border-radius: 2px; background: #fafafa; }
+  .ot-footer { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #ddd; }
+  .ot-footer-col { padding: 8px 14px; }
+  .ot-footer-col:first-child { border-right: 1px solid #ddd; }
+  .ot-footer-col .title { font-weight: 700; font-size: 10px; text-transform: uppercase; color: #1a3a6b; margin-bottom: 5px; border-bottom: 1px solid #1a3a6b; padding-bottom: 2px; }
+  .ot-footer-kv { font-size: 10px; margin-bottom: 4px; display: flex; align-items: baseline; gap: 4px; }
+  .ot-footer-kv .k { color: #555; white-space: nowrap; }
+  .ot-footer-kv .v { border-bottom: 1px solid #aaa; flex: 1; min-height: 14px; font-weight: 600; }
+  .ot-bottom { background: #1a3a6b; color: white; padding: 5px 14px; font-size: 9px; text-align: center; }
+  @media print {
+    #sidebar, #topbar, .btn, .pager { display: none !important; }
+    #main { display: block; }
+    #content { padding: 0; overflow: visible; }
+    .ot-wrap { border: none; border-radius: 0; max-width: 100%; }
+  }
+  @media (max-width: 640px) {
+    #sidebar { width: 48px; }
+    #sidebar .brand .logo span, #sidebar .brand .sub, .nav-item span, .nav-section { display: none; }
+    .nav-item { justify-content: center; padding: 10px; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .search-box { width: 140px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="brand">
+      <div class="logo"><i class="ti ti-radio"></i><span>Gotas Com.</span></div>
+      <div class="sub">Comunicación SPA</div>
+    </div>
+    <nav>
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" data-view="dashboard" onclick="showView('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
+      <div class="nav-section">Datos</div>
+      <div class="nav-item" data-view="clientes" onclick="showView('clientes')"><i class="ti ti-building"></i><span>Clientes</span></div>
+      <div class="nav-item" data-view="instalaciones" onclick="showView('instalaciones')"><i class="ti ti-map-pin"></i><span>Instalaciones</span></div>
+      <div class="nav-item" data-view="equipos" onclick="showView('equipos')"><i class="ti ti-device-walkie-talkie"></i><span>Equipos</span></div>
+      <div class="nav-item" data-view="tecnicos" onclick="showView('tecnicos')"><i class="ti ti-users"></i><span>Técnicos</span></div>
+      <div class="nav-section">Operaciones</div>
+      <div class="nav-item" data-view="notas" onclick="showView('notas')"><i class="ti ti-file-text"></i><span>Órdenes de Trabajo</span></div>
+      <div class="nav-item" data-view="nueva-nota" onclick="showView('nueva-nota')"><i class="ti ti-file-plus"></i><span>Nueva OT</span></div>
+      <div class="nav-item" data-view="informes" onclick="showView('informes')"><i class="ti ti-clipboard-list"></i><span>Informes de Visita</span></div>
+      <div class="nav-item" data-view="nuevo-informe" onclick="showView('nuevo-informe')"><i class="ti ti-clipboard-plus"></i><span>Nuevo Informe</span></div>
+    </nav>
+  </div>
+  <div id="main">
+    <div id="topbar"><h1 id="page-title">Dashboard</h1><div class="actions" id="topbar-actions"></div></div>
+    <div id="content"></div>
+  </div>
+  <div id="modal-container"></div>
+</div>
+
+<script>
+const DB_KEY = 'gotas_db_v1';
+
+const CLIENTES_DEFAULT = ["AD Rooms Ltda","Administracion Said","Agricola Aillin SPA","Agricola Los Carrizos","Aguilera Ltda","Alejandro Leiva","Alto Producciones SPA","Andrea Camus","Andres Pablo Firenze Ahumada","Anvic Ltda","Anza SPA","Argentino Gustavo","Atrex","Bantu SPA","Boxter Media SPA","Carolina Paredes","Cartones Kraft Ltda","Casa de Moneda","Casino Monticello","Centinel SPA","Claudio Rodriguez (Eist)","Clinica Bupa","Clínica Los Tiempos SPA","Club Hacienda Chicureo","CMPC","Colegio Alcantara","Colegio Alicante LF","Comercial San Esteban SPA","Comercializadora Sebastopol Ltda","Comunidad Edificio Carrera II","Comunidad Edificio Manuel Montt 111","Comunidad Edificio San Eugenio","Comunidad Manquehue Plaza","Condominio Alto del Llano","Condominio Ciudad del Sol","Condominio La Ciudadela","Condominio Residencia 7 Plazas","Condominio Santa Mariá del Sol","Conecta Radiocomunicaciones","Conpax Montajes SPA","Consorcio de Seguridad Privada LYS SPA","Constructora Compax SPA","Constructora Insigne Spa","Constructora Lomas SPA","Constructora San Fernando","Constructotra Gestion Uno SPA","Construmart SA","Contrust SPA","Copemsa Sur SPA","Corporación Educacional Andrés Bello Bío Bío","Corporacion Educacional Maese Da Vinci","Country Club La Reina","CTR SA","Cypco SA","Depositos y Contenedores S.A","Dyma Ltda","Edificio ImagoMundi","Edificio Neohaus Ñuñoa","Educacion Las Barrancas","Empresa De Servicio Karen Andrea Menares Olivera E.I.R.L","Erika del Pilar","Espacio Urbano","Estudio Feroz SPA","Eulen Seguridad","F Y C Chile Servicios SPA","Federacion de Futbol de Chile","Fudu Ltda","Full Logistic Services SPA","Fundacion dignidad Libertad e Igualdad","GA Facility SA","GA Limpieza SA","Gabriela Mistral","Garden House","Gold Anda","Grupo Revex","Hadez Inversiones","Heinz Alfred Hornig Weisser","Hospital Villarrica","Hotel Fundador","Hoteles Cumbres","IMC Seguridad Ltda","Imp Celeste SPA","Importadora Dilaco SA","Incelec SPA","Indeli Construcion y Montaje Ltda","Ing Miranda Francesconi Ltda","Ingenieria en Comunicaciones SA","Ingetech SA","Inmobiliaria CR","Inmobiliaria Imperio CR SA","Inmobiliaria Sacor Sociedad Anonima (Mall del Sol)","Inning Mant y Montajes SPA","Innovar SPA","Insega SPA","Integra Servicios SA","Inversiones Vasco Chile Limitada","Iseg Chile SPA","Iso-Metrika","ISS Ltda","Jaime Opazo","Jair Lopez","Jeannette Rain","Joao Rodriguez Donoso","Jorge Cubillos","KMC Ltda","La Giralda S.A","La Oferta","La Pocilga","Lanco & Harris SPA","Latitud Security","Laugher SPA","Laura Yañez","Liderman Facility SPA","Liderman SPA","Liderman SPA (Ecuador)","Limchile SA","LKS Security SPA","Luagher SPA","Luis Diaz Jerez","Lureye (Grupo)","Macarena Group SPA","Mall del Centro","Mall Paseo Quilpue","Mall Paseo Valparaiso","Mall Paseo Valparaiso Aseo","Marcelo Cifuentes","Marco Villarroel (Radiocine)","Maria Arriagada Lorenzini","Marina Arauco","Maundez SPA","Max Barrera Ltda","Megalogistica","MK Recursos Humanos SPA","MyD Servicios Industriales","Net Parking","Nexus","Novarad SPA","NPS SA","Omega","One Security SPA","Osku SA","Pablo Hormazabal","Parque Albano III","Pastoral UC","PFA","Pitagora SA","Producciones Felipe Vera EIRL","Productora Mitrinco","Productora Paredes VIllar SPA","Productora Visibility Ltda","PTT Radio SPA","Puerta Los Trapenses","Quantum Security","Quimica Universal Ltda","Rancho del Che","Ready2go","Republic Parking System","Restaurant El Tucan","Reycom Telecomunicaciones","RGM Mallas de Alambre Ltda","Rodrigo Espinoza","Rodrigo Palominos","Rolando Vasquez","Roman Agyuar","Saba SA","Said Administraciones","Sandos SPA","Santiago 2023","Sebastian Miguel Cruz Capacitacion","Seco Servicios SPA","Securitas SA","Seg Privada Victor Manuel","Segaer SA (Expro Security)","Segplace Seguridad SPA","Seguridad 24 hrs","Seguridad Real","Seigseg SPA","Servicios Malalca SPA","Sisal Chile SPA","Sociedad Bimpex Ltda","Sociedad Metalurgica Cornejo SPA","Taq SPA","Tatiana Gutierrez","Tecnología de Materiales Chile Sociedad","Tefra Ltda","Telnex SPA","THS Clima","Trattoria Calypso","Traza Ingenieria","Trooper (Total-Security)","U de Chile","Urifec SPA","Veronica Honorato","Viña Siegel SA","Viñedos Emiliana SA","Vivo SPA","VM Seguridad SPA","Wenchiken SPA","Willycent SPA","Zero Construcción Vasco SPA"];
+
+const TECNICOS_DEFAULT = [
+  {id:1,nombre:'Brandon Sanhueza',rut:'19.730.892-3',cargo:'Jefe Servicio Técnico',email:'brandon@gotascomunicaciones.com',telefono:'+56940953868'},
+  {id:2,nombre:'Luis Miguel Méndez',rut:'26.779.101-5',cargo:'Técnico',email:'luis@gotascomunicaciones.com',telefono:'+56940953866'},
+  {id:3,nombre:'Eduardo Fritz',rut:'20.499.434-K',cargo:'Técnico',email:'eduardo@gotascomunicaciones.com',telefono:'+56939454322'},
+];
+
+const INSTALACIONES_DEFAULT = [
+  {c:'AD Rooms Ltda',n:['Mall Vivo Coquimbo']},
+  {c:'Administracion Said',n:['Las Acacias']},
+  {c:'Anvic Ltda',n:['Estadio Monumental']},
+  {c:'Consorcio de Seguridad Privada LYS SPA',n:['SMU Valdivia']},
+  {c:'Constructora Compax SPA',n:['Camino y Urbanización MAPA']},
+  {c:'Construmart SA',n:['CM13 Las Rejas','CM20 Rancagua','CM68 Buin Errazuriz','CM69 Buin Manuel Rodríguez','CM73 Curicó Norte','CM80 Chillan Colin','CM82 Construmart Camino Melipilla','CM87 - Los Álamos Colina','Construmart Osorno','Construmart Proyecto','Construmart Temuco','Construmart Departamental']},
+  {c:'Contrust SPA',n:['Obra La Cisterna','Obra Murcia','Obra Powercenter Melipilla','Obra Sergio Ceppi 0607']},
+  {c:'Copemsa Sur SPA',n:['Outlet Park Viña del Mar']},
+  {c:'CTR SA',n:['Hospital Carahue']},
+  {c:'Cypco SA',n:['CC 0529 Inacap Casa Central','CC 0535 Obras Civiles Tottus Peñalolén','CC 0537 Colegio Alemán Chicureo','CC 0542 Obra Open Plaza Calera','CC 0543 Obra Open Plaza Puente Alto','CC 0545 Obra Biblioteca UAI Peñalolén','CC 0546 Obra Mall Arauco Quilicura','CC 0546 Obra Re construcción MAQ Quilicura','CC 0549 Obra Marbella','CC 0561 Easy Santa Amalia','CC 0563 Producción Tottus']},
+  {c:'Espacio Urbano',n:['Los Andes','Viña del Mar']},
+  {c:'Eulen Seguridad',n:['Clínica Bupa']},
+  {c:'Full Logistic Services SPA',n:['H&M Mall Florida Center','Jumbo Costanera Center','Jumbo Latadia','Jumbo Pajaritos','Jumbo Peñalolén','Jumbo Portal Ñuñoa','Nestlé San Fernando','Paris Antofagasta','Paris Arauco Maipú','Paris Bandera','Paris Chillan','Paris Concepción','Paris Copiapó','Paris Costanera Center','Paris Curicó','Paris El Belloto','Paris El Llano','Paris Florida Center','Paris Iquique','Paris Los Ángeles','Paris Lyon','Paris Mall MBI','Paris Melipilla','Paris Osorno','Paris Plaza Oeste','Paris Plaza Vespucio','Paris Portal Ñuñoa','Paris Portal Temuco','Paris Puerto Montt','Paris Quilín','Paris Quillota','Paris Rancagua','Paris San Antonio','Paris San Bernardo','Paris San Felipe','Paris Talca','Paris Temuco Centro','Paris Valparaíso','Paris Viña Marina Arauco','Portal Osorno','Portal Rancagua','Portal Temuco','Santa Isabel Santa Rosa']},
+  {c:'GA Facility SA',n:['Casa Costanera','Mall Vivo Chillan','Mall Vivo Imperio','Mall Vivo Los Trapenses','Outlet Vivo Maipú','Outlet Vivo Temuco','Vivo La Florida','Vivo Mall Coquimbo','Vivo Mall San Fernando','Vivo Panorámico']},
+  {c:'GA Limpieza SA',n:['Casa Costanera','Mall Del Centro','Mall Vivo Chillan','Mall Vivo Imperio','Mall Vivo Los Trapenses','Outlet Vivo Maipú','Outlet Vivo Temuco','Vivo La Florida','Vivo Mall Coquimbo','Vivo Mall San Fernando','Vivo Panorámico']},
+  {c:'Gold Anda',n:['Planta Maquehua','Planta Rosario']},
+  {c:'Ingenieria en Comunicaciones SA',n:['Colegio Javiera Carrera']},
+  {c:'Ingetech SA',n:['MIM Museo Interactivo','Copiapó OC 337-2019','Hospital Doctor OC 1887-2023','Hospital Lucio Córdova OC 242-2019','INE OC 243-2019','Mineduc OC 34-2017','Minsal OC 251-2019','Municipalidad de Antofagasta OC 245-2019','Municipalidad de Providencia Edif. Municipal OC 248-2019','Municipalidad de Providencia Ines de Suarez OC 249-2019','PJUD Alto Hospicio OC XXX-2019','PJUD Atacama OC 246-2019','PJUD II Region OC 274-2019','PJUD Santiago OC 244-2019','PJUD Santiago OC 247-2019','Poder Judicial','Universidad de Chile OC 120-2016']},
+  {c:'Inmobiliaria CR',n:['Mall del Centro','Mall Vivo Imperio']},
+  {c:'Inmobiliaria Imperio CR SA',n:['Mall Vivo Imperio']},
+  {c:'Integra Servicios SA',n:['Clínica Dávila Aseo']},
+];
+
+const EQUIPOS_DEFAULT = [
+  {id:1,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1984',estado:'Disponible',clienteId:null},{id:2,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1890',estado:'Disponible',clienteId:null},{id:3,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1982',estado:'Disponible',clienteId:null},{id:4,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1966',estado:'Disponible',clienteId:null},{id:5,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1884',estado:'Disponible',clienteId:null},{id:6,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25828a1036',estado:'Disponible',clienteId:null},{id:7,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1968',estado:'Disponible',clienteId:null},{id:8,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1962',estado:'Disponible',clienteId:null},{id:9,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1881',estado:'Disponible',clienteId:null},{id:10,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1973',estado:'Disponible',clienteId:null},
+  {id:11,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25828a1151',estado:'Disponible',clienteId:null},{id:12,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2011',estado:'Disponible',clienteId:null},{id:13,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2017',estado:'Disponible',clienteId:null},{id:14,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1991',estado:'Disponible',clienteId:null},{id:15,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2020',estado:'Disponible',clienteId:null},{id:16,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2019',estado:'Disponible',clienteId:null},{id:17,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2009',estado:'Disponible',clienteId:null},{id:18,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2010',estado:'Disponible',clienteId:null},{id:19,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1952',estado:'Disponible',clienteId:null},{id:20,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2018',estado:'Disponible',clienteId:null},
+  {id:21,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2024',estado:'Disponible',clienteId:null},{id:22,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1950',estado:'Disponible',clienteId:null},{id:23,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1951',estado:'Disponible',clienteId:null},{id:24,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2015',estado:'Disponible',clienteId:null},{id:25,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2021',estado:'Disponible',clienteId:null},{id:26,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1957',estado:'Disponible',clienteId:null},{id:27,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1959',estado:'Disponible',clienteId:null},{id:28,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1960',estado:'Disponible',clienteId:null},{id:29,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25828a1154',estado:'Disponible',clienteId:null},{id:30,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1965',estado:'Disponible',clienteId:null},
+  {id:31,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1983',estado:'Disponible',clienteId:null},{id:32,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1891',estado:'Disponible',clienteId:null},{id:33,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1895',estado:'Disponible',clienteId:null},{id:34,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25828a1107',estado:'Disponible',clienteId:null},{id:35,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1885',estado:'Disponible',clienteId:null},{id:36,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2014',estado:'Disponible',clienteId:null},{id:37,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1992',estado:'Disponible',clienteId:null},{id:38,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1990',estado:'Disponible',clienteId:null},{id:39,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2012',estado:'Disponible',clienteId:null},{id:40,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2022',estado:'Disponible',clienteId:null},
+  {id:41,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2013',estado:'Disponible',clienteId:null},{id:42,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a2016',estado:'Disponible',clienteId:null},{id:43,marca:'Hytera',modelo:'BP566 U2',tipo:'Portátil',banda:'UHF',serie:'25n20a1961',estado:'Disponible',clienteId:null},
+  {id:44,marca:'Hytera',modelo:'PD486 VHF',tipo:'Portátil',banda:'VHF',serie:'21927a0158',estado:'Disponible',clienteId:null},{id:45,marca:'Hytera',modelo:'PD486 VHF',tipo:'Portátil',banda:'VHF',serie:'21927a0159',estado:'Disponible',clienteId:null},{id:46,marca:'Hytera',modelo:'PD486 VHF',tipo:'Portátil',banda:'VHF',serie:'21927a0160',estado:'Disponible',clienteId:null},
+  {id:47,marca:'Hytera',modelo:'HP606 Um',tipo:'Portátil',banda:'UHF',serie:'23910A0077',estado:'Disponible',clienteId:null},{id:48,marca:'Hytera',modelo:'HP606 Um',tipo:'Portátil',banda:'UHF',serie:'23910A0076',estado:'Disponible',clienteId:null},{id:49,marca:'Hytera',modelo:'HP606 Um',tipo:'Portátil',banda:'UHF',serie:'23910A0075',estado:'Disponible',clienteId:null},
+  {id:50,marca:'Hytera',modelo:'BD506 U8',tipo:'Portátil',banda:'UHF',serie:'25n24a2176',estado:'Disponible',clienteId:null},{id:51,marca:'Hytera',modelo:'BD506 U8',tipo:'Portátil',banda:'UHF',serie:'25n24a2177',estado:'Disponible',clienteId:null},
+  {id:52,marca:'Hytera',modelo:'TC508V',tipo:'Portátil',banda:'VHF',serie:'21830c0066',estado:'Disponible',clienteId:null},{id:53,marca:'Hytera',modelo:'TC508V',tipo:'Portátil',banda:'VHF',serie:'21830c0065',estado:'Disponible',clienteId:null},{id:54,marca:'Hytera',modelo:'TC508V',tipo:'Portátil',banda:'VHF',serie:'21830c0014',estado:'Disponible',clienteId:null},
+  {id:55,marca:'Hytera',modelo:'PD406 VHF',tipo:'Portátil',banda:'VHF',serie:'18316a0899',estado:'Disponible',clienteId:null},{id:56,marca:'Hytera',modelo:'PD416 VHF',tipo:'Portátil',banda:'VHF',serie:'19708a0020',estado:'Disponible',clienteId:null},
+  {id:57,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0069',estado:'Disponible',clienteId:null},{id:58,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0241',estado:'Disponible',clienteId:null},{id:59,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0235',estado:'Disponible',clienteId:null},{id:60,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0458',estado:'Disponible',clienteId:null},{id:61,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0231',estado:'Disponible',clienteId:null},{id:62,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0074',estado:'Disponible',clienteId:null},{id:63,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0237',estado:'Disponible',clienteId:null},{id:64,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0456',estado:'Disponible',clienteId:null},{id:65,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0236',estado:'Disponible',clienteId:null},{id:66,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0464',estado:'Disponible',clienteId:null},{id:67,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0075',estado:'Disponible',clienteId:null},{id:68,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0462',estado:'Disponible',clienteId:null},{id:69,marca:'Hytera',modelo:'PNC360S',tipo:'Portátil POC',banda:'POC',serie:'25429a0233',estado:'Disponible',clienteId:null},
+  {id:70,marca:'Hytera',modelo:'MNC360',tipo:'Móvil POC',banda:'POC',serie:'25816a1016',estado:'Disponible',clienteId:null},{id:71,marca:'Hytera',modelo:'MNC360',tipo:'Móvil POC',banda:'POC',serie:'25816a1020',estado:'Disponible',clienteId:null},{id:72,marca:'Hytera',modelo:'MNC360',tipo:'Móvil POC',banda:'POC',serie:'25816a1005',estado:'Disponible',clienteId:null},{id:73,marca:'Hytera',modelo:'MNC360',tipo:'Móvil POC',banda:'POC',serie:'25816a1003',estado:'Disponible',clienteId:null},{id:74,marca:'Hytera',modelo:'MNC360',tipo:'Móvil POC',banda:'POC',serie:'25816a1012',estado:'Disponible',clienteId:null},
+  {id:75,marca:'Motorola',modelo:'DEP250',tipo:'Portátil',banda:'UHF',serie:'278tbhd996',estado:'Disponible',clienteId:null},{id:76,marca:'Motorola',modelo:'DEP250',tipo:'Portátil',banda:'UHF',serie:'278tbhe023',estado:'Disponible',clienteId:null},
+  {id:77,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02135',estado:'Disponible',clienteId:null},{id:78,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02130',estado:'Disponible',clienteId:null},{id:79,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02140',estado:'Disponible',clienteId:null},{id:80,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02127',estado:'Disponible',clienteId:null},{id:81,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02126',estado:'Disponible',clienteId:null},{id:82,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02132',estado:'Disponible',clienteId:null},{id:83,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02137',estado:'Disponible',clienteId:null},{id:84,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02128',estado:'Disponible',clienteId:null},{id:85,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02129',estado:'Disponible',clienteId:null},{id:86,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h02131',estado:'Disponible',clienteId:null},{id:87,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h00591',estado:'Disponible',clienteId:null},{id:88,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h00592',estado:'Disponible',clienteId:null},{id:89,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h00593',estado:'Disponible',clienteId:null},{id:90,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h00594',estado:'Disponible',clienteId:null},{id:91,marca:'TXPro',modelo:'TX600H',tipo:'Portátil',banda:'UHF',serie:'2503h00595',estado:'Disponible',clienteId:null},
+  {id:92,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139033',estado:'Disponible',clienteId:null},{id:93,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139034',estado:'Disponible',clienteId:null},{id:94,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139035',estado:'Disponible',clienteId:null},{id:95,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139036',estado:'Disponible',clienteId:null},{id:96,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139037',estado:'Disponible',clienteId:null},{id:97,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139038',estado:'Disponible',clienteId:null},{id:98,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139039',estado:'Disponible',clienteId:null},{id:99,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139040',estado:'Disponible',clienteId:null},{id:100,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139041',estado:'Disponible',clienteId:null},{id:101,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139042',estado:'Disponible',clienteId:null},{id:102,marca:'WLAN',modelo:'KDC-1',tipo:'Portátil',banda:'UHF',serie:'KDC139044',estado:'Disponible',clienteId:null},
+  {id:103,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'25818a0005',estado:'Disponible',clienteId:null},{id:104,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'19715a0124',estado:'Disponible',clienteId:null},{id:105,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'19715a0123',estado:'Disponible',clienteId:null},{id:106,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'25818a0007',estado:'Disponible',clienteId:null},{id:107,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'25818a0008',estado:'Disponible',clienteId:null},{id:108,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'25818a0001',estado:'Disponible',clienteId:null},{id:109,marca:'Hytera',modelo:'HM786 U2',tipo:'Móvil',banda:'UHF',serie:'25818a0002',estado:'Disponible',clienteId:null},
+  {id:110,marca:'Motorola',modelo:'XTL2500',tipo:'Móvil',banda:'UHF',serie:'514cnv1672',estado:'Disponible',clienteId:null},
+  {id:111,marca:'Hytera',modelo:'HR1066 VHF',tipo:'Repetidor',banda:'VHF',serie:'25813a0572',estado:'Disponible',clienteId:null},{id:112,marca:'Hytera',modelo:'HR1066 U2',tipo:'Repetidor',banda:'UHF',serie:'25813a0559',estado:'Disponible',clienteId:null}
+];
+
+function buildDefaultDB() {
+  let cid=1;
+  const clientes=CLIENTES_DEFAULT.map(n=>({id:cid++,nombre:n,rut:'',contacto:'',telefono:'',email:''}));
+  let iid=1;
+  const instalaciones=[];
+  INSTALACIONES_DEFAULT.forEach(g=>{
+    const cl=clientes.find(c=>c.nombre===g.c);
+    if(cl) g.n.forEach(n=>instalaciones.push({id:iid++,nombre:n,clienteId:cl.id,direccion:'',ciudad:'',tipo:''}));
+  });
+  return {clientes,instalaciones,tecnicos:JSON.parse(JSON.stringify(TECNICOS_DEFAULT)),notas:[],equipos:JSON.parse(JSON.stringify(EQUIPOS_DEFAULT)),nextId:{cliente:cid,instalacion:iid,tecnico:4,nota:1,equipo:200}};
+}
+
+function loadDB(){try{const r=localStorage.getItem(DB_KEY);if(r)return JSON.parse(r);}catch(e){}const d=buildDefaultDB();saveDB(d);return d;}
+function saveDB(d){try{localStorage.setItem(DB_KEY,JSON.stringify(d));}catch(e){}}
+
+let db=loadDB();
+let clientePage=1,instPage=1; const CPP=25;
+
+const $=id=>document.getElementById(id);
+function getCliente(id){return db.clientes.find(c=>c.id===id);}
+function getInstalacion(id){return db.instalaciones.find(i=>i.id===id);}
+function getTecnico(id){return db.tecnicos.find(t=>t.id===id);}
+
+function showView(view){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const nav=document.querySelector(`[data-view="${view}"]`);
+  if(nav) nav.classList.add('active');
+  const titles={dashboard:'Dashboard',clientes:'Clientes',instalaciones:'Instalaciones',equipos:'Equipos',tecnicos:'Técnicos',notas:'Órdenes de Trabajo','nueva-nota':'Nueva Orden de Trabajo',informes:'Informes de Visita a Terreno','nuevo-informe':'Nuevo Informe de Visita'};
+  $('page-title').textContent=titles[view]||view;
+  $('topbar-actions').innerHTML='';
+  ({dashboard:renderDashboard,clientes:renderClientes,instalaciones:renderInstalaciones,equipos:renderEquipos,tecnicos:renderTecnicos,notas:renderNotas,'nueva-nota':renderNuevaNota,informes:renderInformes,'nuevo-informe':renderNuevoInforme})[view]?.();
+}
+
+function renderDashboard(){
+  const rf=db.equipos.filter(e=>!['Batería','Cargador','Manos libres'].includes(e.tipo));
+  const tipos={};rf.forEach(e=>{tipos[e.tipo]=(tipos[e.tipo]||0)+1;});
+  $('content').innerHTML=`
+    <div class="stats-row">
+      <div class="stat-card"><div class="lbl">Clientes</div><div class="val">${db.clientes.length}</div></div>
+      <div class="stat-card"><div class="lbl">Instalaciones</div><div class="val">${db.instalaciones.length}</div></div>
+      <div class="stat-card"><div class="lbl">OT emitidas</div><div class="val">${db.notas.length}</div><div class="sub">${db.notas.filter(n=>n.firmado).length} firmadas</div></div>
+      <div class="stat-card"><div class="lbl">Informes de visita</div><div class="val">${(db.informes||[]).length}</div></div>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500">Stock por tipo</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+      ${Object.entries(tipos).map(([t,c])=>`<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 16px"><div style="font-size:11px;color:var(--text2)">${t}</div><div style="font-size:20px;font-weight:500">${c}</div></div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="showView('nueva-nota')"><i class="ti ti-file-plus"></i> Nueva OT</button>
+      <button class="btn btn-primary" onclick="showView('nuevo-informe')" style="background:#2d6a4f;border-color:#2d6a4f"><i class="ti ti-clipboard-plus"></i> Nuevo Informe</button>
+      <button class="btn" onclick="showView('notas')"><i class="ti ti-file-text"></i> Ver OTs</button>
+      <button class="btn" onclick="showView('equipos')"><i class="ti ti-device-walkie-talkie"></i> Inventario</button>
+    </div>`;
+}
+
+function renderClientes(){
+  $('topbar-actions').innerHTML=`<input class="search-box" id="sc" placeholder="Buscar cliente..." oninput="clientePage=1;renderClientes()"><button class="btn btn-primary" onclick="openModal('cliente')"><i class="ti ti-plus"></i> Agregar</button>`;
+  const q=($('sc')||{}).value||'';
+  const lista=db.clientes.filter(c=>c.nombre.toLowerCase().includes(q.toLowerCase()));
+  const pages=Math.ceil(lista.length/CPP)||1;
+  if(clientePage>pages) clientePage=pages;
+  const slice=lista.slice((clientePage-1)*CPP,clientePage*CPP);
+  $('content').innerHTML=`
+    <table class="data-table"><thead><tr><th>#</th><th>Nombre</th><th>RUT</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th></th></tr></thead>
+    <tbody>${slice.map((c,i)=>`<tr><td style="color:var(--text3);font-size:12px">${(clientePage-1)*CPP+i+1}</td><td style="font-weight:500">${c.nombre}</td><td style="color:var(--text2)">${c.rut||'—'}</td><td>${c.contacto||'—'}</td><td>${c.telefono||'—'}</td><td>${c.email||'—'}</td>
+      <td><button class="btn btn-sm" onclick="openModal('cliente',${c.id})"><i class="ti ti-edit"></i></button> <button class="btn btn-sm" onclick="del('clientes',${c.id},renderClientes)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">Sin resultados</td></tr>'}
+    </tbody></table>
+    <div class="pager"><button class="btn btn-sm" onclick="clientePage=Math.max(1,clientePage-1);renderClientes()" ${clientePage<=1?'disabled':''}>‹ Anterior</button><span>Página ${clientePage} de ${pages} · ${lista.length} clientes</span><button class="btn btn-sm" onclick="clientePage=Math.min(${pages},clientePage+1);renderClientes()" ${clientePage>=pages?'disabled':''}>Siguiente ›</button></div>`;
+}
+
+function renderInstalaciones(){
+  $('topbar-actions').innerHTML=`<input class="search-box" id="si" placeholder="Buscar instalación..." oninput="instPage=1;renderInstalaciones()" style="width:200px"><button class="btn btn-primary" onclick="openModal('instalacion')"><i class="ti ti-plus"></i> Agregar</button>`;
+  const q=($('si')||{}).value||'';
+  const lista=db.instalaciones.filter(i=>i.nombre.toLowerCase().includes(q.toLowerCase())||(getCliente(i.clienteId)||{}).nombre?.toLowerCase().includes(q.toLowerCase()));
+  const pages=Math.ceil(lista.length/CPP)||1;
+  if(instPage>pages) instPage=pages;
+  const slice=lista.slice((instPage-1)*CPP,instPage*CPP);
+  $('content').innerHTML=`
+    <table class="data-table"><thead><tr><th>Nombre</th><th>Cliente</th><th>Dirección</th><th>Ciudad</th><th></th></tr></thead>
+    <tbody>${slice.map(i=>{const cl=getCliente(i.clienteId);return`<tr><td style="font-weight:500">${i.nombre}</td><td><span class="badge badge-blue" style="font-size:11px">${cl?cl.nombre:'—'}</span></td><td style="color:var(--text2)">${i.direccion||'—'}</td><td>${i.ciudad||'—'}</td>
+      <td><button class="btn btn-sm" onclick="openModal('instalacion',${i.id})"><i class="ti ti-edit"></i></button> <button class="btn btn-sm" onclick="del('instalaciones',${i.id},renderInstalaciones)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`;}).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px">Sin instalaciones.</td></tr>'}
+    </tbody></table>
+    <div class="pager"><button class="btn btn-sm" onclick="instPage=Math.max(1,instPage-1);renderInstalaciones()" ${instPage<=1?'disabled':''}>‹ Anterior</button><span>Página ${instPage} de ${pages} · ${lista.length} instalaciones</span><button class="btn btn-sm" onclick="instPage=Math.min(${pages},instPage+1);renderInstalaciones()" ${instPage>=pages?'disabled':''}>Siguiente ›</button></div>`;
+}
+
+function renderEquipos(){
+  $('topbar-actions').innerHTML=`<input class="search-box" id="se" placeholder="Serie o modelo..." oninput="renderEquipos()" style="width:160px">
+    <select class="filter-select" id="fe-tipo" onchange="renderEquipos()"><option value="">Todos los tipos</option>${[...new Set(db.equipos.map(e=>e.tipo))].map(t=>`<option>${t}</option>`).join('')}</select>
+    <select class="filter-select" id="fe-marca" onchange="renderEquipos()"><option value="">Todas las marcas</option>${[...new Set(db.equipos.map(e=>e.marca))].map(m=>`<option>${m}</option>`).join('')}</select>
+    <button class="btn btn-primary" onclick="openModal('equipo')"><i class="ti ti-plus"></i> Agregar</button>`;
+  const q=($('se')||{}).value||'',ft=($('fe-tipo')||{}).value||'',fm=($('fe-marca')||{}).value||'';
+  const lista=db.equipos.filter(e=>(!q||e.serie.toLowerCase().includes(q.toLowerCase())||e.modelo.toLowerCase().includes(q.toLowerCase()))&&(!ft||e.tipo===ft)&&(!fm||e.marca===fm));
+  const ec={Disponible:'badge-green',Arrendado:'badge-amber',Instalado:'badge-blue','En reparación':'badge-red',Vendido:'badge-gray'};
+  $('content').innerHTML=`<p style="font-size:12px;color:var(--text2);margin-bottom:10px">${lista.length} equipos</p>
+    <table class="data-table"><thead><tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Banda</th><th>N° Serie</th><th>Estado</th><th>Cliente</th><th></th></tr></thead>
+    <tbody>${lista.map(e=>{const cl=getCliente(e.clienteId);return`<tr><td style="font-weight:500">${e.marca}</td><td>${e.modelo}</td><td>${e.tipo}</td><td>${e.banda||'—'}</td><td style="font-family:monospace;font-size:12px">${e.serie}</td><td><span class="badge ${ec[e.estado]||'badge-gray'}">${e.estado}</span></td><td style="font-size:12px">${cl?cl.nombre:'<span style="color:var(--text3)">—</span>'}</td><td><button class="btn btn-sm" onclick="openModal('equipo',${e.id})"><i class="ti ti-edit"></i></button></td></tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px">Sin resultados</td></tr>'}
+    </tbody></table>`;
+}
+
+function renderTecnicos(){
+  $('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="openModal('tecnico')"><i class="ti ti-plus"></i> Agregar</button>`;
+  $('content').innerHTML=`<table class="data-table"><thead><tr><th>Nombre</th><th>RUT</th><th>Cargo</th><th>Teléfono</th><th>Email</th><th></th></tr></thead>
+    <tbody>${db.tecnicos.length?db.tecnicos.map(t=>`<tr><td style="font-weight:500">${t.nombre}</td><td style="color:var(--text2)">${t.rut||'—'}</td><td>${t.cargo||'—'}</td><td>${t.telefono||'—'}</td><td>${t.email||'—'}</td>
+      <td><button class="btn btn-sm" onclick="openModal('tecnico',${t.id})"><i class="ti ti-edit"></i></button> <button class="btn btn-sm" onclick="del('tecnicos',${t.id},renderTecnicos)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">Sin técnicos.</td></tr>'}
+    </tbody></table>`;
+}
+
+function renderNotas(){
+  $('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="showView('nueva-nota')"><i class="ti ti-file-plus"></i> Nueva OT</button>`;
+  $('content').innerHTML=`<table class="data-table"><thead><tr><th>N° OT</th><th>Fecha creación</th><th>Tipo</th><th>Cliente</th><th>Técnico</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${db.notas.length?db.notas.slice().reverse().map(n=>{const cl=getCliente(n.clienteId);const t=getTecnico(n.tecnicoId);return`<tr><td style="font-weight:600;color:var(--info)">${n.numero}</td><td>${n.fechaCreacion}</td><td>${n.tipo}</td><td>${cl?cl.nombre:'—'}</td><td>${t?t.nombre:'—'}</td><td><span class="badge ${n.firmado?'badge-green':'badge-amber'}">${n.firmado?'Firmada':'Pendiente'}</span></td>
+      <td><button class="btn btn-sm" onclick="verNota(${n.id})"><i class="ti ti-eye"></i></button> <button class="btn btn-sm" onclick="del('notas',${n.id},renderNotas)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">Sin órdenes de trabajo.</td></tr>'}
+    </tbody></table>`;
+}
+
+let sigCanvas,sigCtx,drawing=false;
+
+function renderNuevaNota(){
+  const clOpts=db.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  const insOpts=db.instalaciones.map(i=>`<option value="${i.id}">${i.nombre}</option>`).join('');
+  const tOpts=db.tecnicos.map(t=>`<option value="${t.id}">${t.nombre}</option>`).join('');
+  const num='OT-'+String(db.nextId.nota).padStart(4,'0');
+  const today=new Date().toISOString().split('T')[0];
+  const eqOpts=db.equipos.filter(e=>e.tipo!=='Batería').map(e=>`<option value="${e.id}">[${e.tipo}] ${e.marca} ${e.modelo} — ${e.serie}</option>`).join('');
+  const eqRows=Array.from({length:10},(_,i)=>`<tr>
+    <td><input style="width:36px;border:none;border-bottom:1px solid #ccc;font-size:10px;background:transparent;text-align:center" id="eq-cant-${i}" value="1"></td>
+    <td><select style="width:100%;border:none;border-bottom:1px solid #ccc;font-size:10px;background:transparent" id="eq-sel-${i}" onchange="fillEq(${i})"><option value="">—</option>${eqOpts}</select></td>
+    <td><input style="width:100%;border:none;border-bottom:1px solid #ccc;font-size:10px;background:transparent" id="eq-mod-${i}" readonly></td>
+    <td><input style="width:100%;border:none;border-bottom:1px solid #ccc;font-size:10px;background:transparent;font-family:monospace" id="eq-ser-${i}" readonly></td>
+    <td><input style="width:100%;border:none;border-bottom:1px solid #ccc;font-size:10px;background:transparent" id="eq-ret-${i}" placeholder="equipo retirado..."></td>
+  </tr>`).join('');
+
+  $('content').innerHTML=`<div style="max-width:780px">
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+      <p style="font-size:12px;font-weight:500;margin-bottom:12px;color:var(--text2)">Datos de la orden</p>
+      <div class="form-grid">
+        <div class="field"><label>N° de Orden</label><input id="nd-num" value="${num}" readonly style="font-weight:600;color:var(--info)"></div>
+        <div class="field"><label>Tipo</label><select id="nd-tipo"><option>Orden de Trabajo</option><option>Programación</option><option>Recambio</option><option>Retiro</option></select></div>
+        <div class="field"><label>Cliente</label><select id="nd-cliente"><option value="">Seleccionar...</option>${clOpts}</select></div>
+        <div class="field"><label>Instalación</label><select id="nd-inst"><option value="">Seleccionar...</option>${insOpts}</select></div>
+        <div class="field"><label>Fecha creación OT</label><input type="date" id="nd-fc" value="${today}"></div>
+        <div class="field"><label>Fecha ejecución OT</label><input type="date" id="nd-fe"></div>
+        <div class="field"><label>Técnico</label><select id="nd-tec"><option value="">Seleccionar...</option>${tOpts}</select></div>
+        <div class="field"><label>RUT receptor</label><input id="nd-rrut" placeholder="12.345.678-9"></div>
+        <div class="field" style="grid-column:span 2"><label>Nombre receptor</label><input id="nd-rnombre" placeholder="Quien recibe y firma"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Observaciones</label><textarea id="nd-obs" rows="2"></textarea></div>
+    </div>
+    <div class="ot-wrap">
+      <div class="ot-header">
+        <div><div class="empresa">Gotas Comunicación SPA</div><div class="sub">Av. Del Valle Sur 662 Of. 303 · Ciudad Empresarial · Huechuraba · Santiago</div></div>
+        <div class="num-orden"><div class="label">N° de Orden</div><div class="num">${num}</div></div>
+      </div>
+      <div class="ot-tipos">
+        <div class="ot-tipo-box"><div class="check" id="chk-ot">✓</div> Orden de Trabajo</div>
+        <div class="ot-tipo-box"><div class="check" id="chk-prog"> </div> Programación</div>
+        <div class="ot-tipo-box"><div class="check" id="chk-rec"> </div> Recambio</div>
+        <div class="ot-tipo-box"><div class="check" id="chk-ret"> </div> Retiro</div>
+      </div>
+      <div class="ot-info">
+        <div class="ot-info-col">
+          <div class="ot-kv"><span class="k">Cliente :</span><span class="v" id="pv-cl"></span></div>
+          <div class="ot-kv"><span class="k">Instalación :</span><span class="v" id="pv-inst"></span></div>
+          <div class="ot-kv"><span class="k">Fecha creación OT :</span><span class="v" id="pv-fc"></span></div>
+          <div class="ot-kv"><span class="k">Fecha ejecución OT :</span><span class="v" id="pv-fe"></span></div>
+        </div>
+        <div class="ot-info-col" style="background:#f5f7fa;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:10px;color:#999;font-style:italic">Vista previa en tiempo real</span>
+        </div>
+      </div>
+      <div style="padding:6px 14px;border-bottom:1px solid #ddd">
+        <table class="ot-table"><thead><tr><th style="width:36px">Cant.</th><th style="width:20%">Seleccionar equipo</th><th style="width:20%">Modelo</th><th style="width:20%">N° Serie</th><th>Equipo retirado</th></tr></thead>
+        <tbody>${eqRows}</tbody></table>
+      </div>
+      <div class="ot-obs"><div class="label">Observaciones</div><div class="val" id="pv-obs" style="min-height:38px"></div></div>
+      <div class="ot-footer">
+        <div class="ot-footer-col">
+          <div class="title">Datos del Técnico</div>
+          <div class="ot-footer-kv"><span class="k">Nombre :</span><span class="v" id="pv-tec"></span></div>
+          <div class="ot-footer-kv"><span class="k">RUT :</span><span class="v" id="pv-rut-tec"></span></div>
+          <div class="ot-footer-kv"><span class="k">Timbre Gotas :</span><span class="v"></span></div>
+        </div>
+        <div class="ot-footer-col">
+          <div class="title">Datos de Recepción</div>
+          <div class="ot-footer-kv"><span class="k">Nombre :</span><span class="v" id="pv-rnombre"></span></div>
+          <div class="ot-footer-kv"><span class="k">RUT :</span><span class="v" id="pv-rrut"></span></div>
+          <div class="ot-footer-kv"><span class="k">Firma :</span><span class="v" style="min-height:14px"></span></div>
+          <canvas id="sig" height="60" style="border:1px solid #ccc;border-radius:3px;width:100%;cursor:crosshair;touch-action:none;margin-top:4px;display:block;"></canvas>
+          <button class="btn btn-sm" onclick="clearSig()" style="margin-top:4px;font-size:10px"><i class="ti ti-eraser"></i> Limpiar firma</button>
+        </div>
+      </div>
+      <div class="ot-bottom">Gotas Comunicación SPA · Rut 78.253.842-K · info@gotascomunicaciones.com · +56 9 8226 7334 · www.gotascomunicaciones.com</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="guardarNota()"><i class="ti ti-device-floppy"></i> Guardar OT</button>
+      <button class="btn" onclick="showView('notas')">Cancelar</button>
+    </div>
+  </div>`;
+
+  // Live bindings
+  const bv=(id,pvId,fn)=>{const el=$(id);if(el)el.addEventListener('input',()=>{const pv=$(pvId);if(pv)pv.textContent=fn?fn(el.value):el.value;});};
+  bv('nd-fc','pv-fc'); bv('nd-fe','pv-fe'); bv('nd-rnombre','pv-rnombre'); bv('nd-rrut','pv-rrut'); bv('nd-obs','pv-obs');
+  $('nd-cliente').addEventListener('change',e=>{const cl=getCliente(parseInt(e.target.value));$('pv-cl').textContent=cl?cl.nombre:'';});
+  $('nd-inst').addEventListener('change',e=>{const i=getInstalacion(parseInt(e.target.value));$('pv-inst').textContent=i?i.nombre:'';});
+  $('nd-tec').addEventListener('change',e=>{const t=getTecnico(parseInt(e.target.value));if(t){$('pv-tec').textContent=t.nombre;$('pv-rut-tec').textContent=t.rut||'';}});
+  $('nd-tipo').addEventListener('change',e=>{
+    ['ot','prog','rec','ret'].forEach(k=>$('chk-'+k).textContent=' ');
+    const m={'Orden de Trabajo':'ot','Programación':'prog','Recambio':'rec','Retiro':'ret'};
+    if(m[e.target.value]) $('chk-'+m[e.target.value]).textContent='✓';
+  });
+
+  sigCanvas=$('sig');sigCtx=sigCanvas.getContext('2d');
+  sigCanvas.width=sigCanvas.offsetWidth||320;
+  sigCtx.strokeStyle='#111';sigCtx.lineWidth=1.5;sigCtx.lineCap='round';
+  const gp=e=>{const r=sigCanvas.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(sigCanvas.width/r.width),y:(s.clientY-r.top)*(sigCanvas.height/r.height)};};
+  sigCanvas.onmousedown=sigCanvas.ontouchstart=e=>{e.preventDefault();drawing=true;const p=gp(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);};
+  sigCanvas.onmousemove=sigCanvas.ontouchmove=e=>{e.preventDefault();if(!drawing)return;const p=gp(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();};
+  sigCanvas.onmouseup=sigCanvas.ontouchend=()=>drawing=false;
+}
+
+window.fillEq=function(i){
+  const eq=db.equipos.find(e=>e.id===parseInt($('eq-sel-'+i).value));
+  $('eq-mod-'+i).value=eq?eq.modelo:'';
+  $('eq-ser-'+i).value=eq?eq.serie:'';
+};
+
+function clearSig(){if(sigCanvas)sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);}
+
+function guardarNota(){
+  const fc=$('nd-fc').value, fe=$('nd-fe').value, tipo=$('nd-tipo').value;
+  const clienteId=parseInt($('nd-cliente').value)||null;
+  const instalacionId=parseInt($('nd-inst').value)||null;
+  const tecnicoId=parseInt($('nd-tec').value)||null;
+  const receptor=$('nd-rnombre').value, receptorRut=$('nd-rrut').value, obs=$('nd-obs').value;
+  if(!fc||!clienteId){alert('Completa la fecha de creación y el cliente.');return;}
+  const equipos=[];
+  for(let i=0;i<10;i++){const sel=$('eq-sel-'+i);if(sel&&sel.value)equipos.push({equipoId:parseInt(sel.value),cantidad:$('eq-cant-'+i).value||1,retirado:($('eq-ret-'+i)||{}).value||''});}
+  const firma=sigCanvas?sigCanvas.toDataURL():null;
+  const hasFirma=firma&&sigCtx&&sigCtx.getImageData(0,0,sigCanvas.width,sigCanvas.height).data.some(v=>v!==0);
+  const nota={id:db.nextId.nota,numero:'OT-'+String(db.nextId.nota).padStart(4,'0'),fechaCreacion:fc,fechaEjecucion:fe,tipo,clienteId,instalacionId,tecnicoId,receptor,receptorRut,equipos,observaciones:obs,firma:hasFirma?firma:null,firmado:hasFirma};
+  db.notas.push(nota);db.nextId.nota++;saveDB(db);verNota(nota.id);
+}
+
+function verNota(id){
+  const n=db.notas.find(x=>x.id===id);if(!n)return;
+  const cl=getCliente(n.clienteId),ins=getInstalacion(n.instalacionId),tec=getTecnico(n.tecnicoId);
+  const eqs=(n.equipos||[]).map(r=>{const eq=db.equipos.find(e=>e.id===r.equipoId);return{...r,eq};}).filter(r=>r.eq);
+  const eqRows=eqs.map(r=>`<tr><td style="text-align:center">${r.cantidad}</td><td>${r.eq.marca}</td><td>${r.eq.modelo}</td><td style="font-family:monospace">${r.eq.serie}</td><td>${r.retirado||'—'}</td></tr>`).join('');
+  const blanks=Math.max(0,8-eqs.length);
+  const blankRows=Array.from({length:blanks},()=>'<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>').join('');
+  const tipos={'Orden de Trabajo':'ot','Programación':'prog','Recambio':'rec','Retiro':'ret'};
+
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  $('page-title').textContent='OT '+n.numero;
+  $('topbar-actions').innerHTML=`<button class="btn" onclick="showView('notas')"><i class="ti ti-arrow-left"></i> Volver</button><button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Imprimir</button>`;
+  $('content').innerHTML=`<div class="ot-wrap" style="max-width:780px">
+    <div class="ot-header">
+      <div><div class="empresa">Gotas Comunicación SPA</div><div class="sub">Av. Del Valle Sur 662 Of. 303 · Ciudad Empresarial · Huechuraba · Santiago</div></div>
+      <div class="num-orden"><div class="label">N° de Orden</div><div class="num">${n.numero}</div></div>
+    </div>
+    <div class="ot-tipos">
+      ${['Orden de Trabajo','Programación','Recambio','Retiro'].map(t=>`<div class="ot-tipo-box"><div class="check">${n.tipo===t?'✓':' '}</div> ${t}</div>`).join('')}
+    </div>
+    <div class="ot-info">
+      <div class="ot-info-col">
+        <div class="ot-kv"><span class="k">Cliente :</span><span class="v">${cl?cl.nombre:''}</span></div>
+        <div class="ot-kv"><span class="k">Instalación :</span><span class="v">${ins?ins.nombre:''}</span></div>
+        <div class="ot-kv"><span class="k">Fecha creación OT :</span><span class="v">${n.fechaCreacion||''}</span></div>
+        <div class="ot-kv"><span class="k">Fecha ejecución OT :</span><span class="v">${n.fechaEjecucion||''}</span></div>
+      </div>
+      <div class="ot-info-col" style="display:flex;align-items:center;justify-content:flex-end;padding:8px 14px">
+        <span class="badge ${n.firmado?'badge-green':'badge-amber'}">${n.firmado?'Firmada':'Pendiente firma'}</span>
+      </div>
+    </div>
+    <div style="padding:6px 14px;border-bottom:1px solid #ddd">
+      <table class="ot-table"><thead><tr><th>Cant.</th><th>Marca</th><th>Modelo</th><th>N° Serie</th><th>Equipo retirado</th></tr></thead>
+      <tbody>${eqRows}${blankRows}</tbody></table>
+    </div>
+    <div class="ot-obs"><div class="label">Observaciones</div><div class="val">${n.observaciones||''}</div></div>
+    <div class="ot-footer">
+      <div class="ot-footer-col">
+        <div class="title">Datos del Técnico</div>
+        <div class="ot-footer-kv"><span class="k">Nombre :</span><span class="v">${tec?tec.nombre:''}</span></div>
+        <div class="ot-footer-kv"><span class="k">RUT :</span><span class="v">${tec?tec.rut||'':''}</span></div>
+        <div class="ot-footer-kv"><span class="k">Timbre Gotas :</span><span class="v"></span></div>
+      </div>
+      <div class="ot-footer-col">
+        <div class="title">Datos de Recepción</div>
+        <div class="ot-footer-kv"><span class="k">Nombre :</span><span class="v">${n.receptor||''}</span></div>
+        <div class="ot-footer-kv"><span class="k">RUT :</span><span class="v">${n.receptorRut||''}</span></div>
+        <div class="ot-footer-kv"><span class="k">Firma :</span><span class="v" style="min-height:50px">${n.firma?`<img src="${n.firma}" style="height:46px;max-width:100%;object-fit:contain">`:''}</span></div>
+      </div>
+    </div>
+    <div class="ot-bottom">Gotas Comunicación SPA · Rut 78.253.842-K · info@gotascomunicaciones.com · +56 9 8226 7334 · www.gotascomunicaciones.com</div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:8px">
+    <button class="btn btn-primary" onclick="showView('nueva-nota')"><i class="ti ti-file-plus"></i> Nueva OT</button>
+    <button class="btn" onclick="showView('notas')">Ver todas</button>
+  </div>`;
+}
+
+function renderInformes(){
+  if(!db.informes) db.informes=[];
+  $('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="showView('nuevo-informe')"><i class="ti ti-clipboard-plus"></i> Nuevo Informe</button>`;
+  $('content').innerHTML=`<table class="data-table"><thead><tr><th>N° Informe</th><th>Fecha</th><th>Cliente</th><th>Instalación</th><th>Ciudad</th><th>Técnico</th><th></th></tr></thead>
+    <tbody>${db.informes.length?db.informes.slice().reverse().map(inf=>{const cl=getCliente(inf.clienteId);const ins=getInstalacion(inf.instalacionId);const tec=getTecnico(inf.tecnicoId);return`<tr>
+      <td style="font-weight:600;color:#2d6a4f">${inf.numero}</td>
+      <td>${inf.fecha||'—'}</td>
+      <td>${cl?cl.nombre:'—'}</td>
+      <td>${ins?ins.nombre:'—'}</td>
+      <td>${inf.ciudad||'—'}</td>
+      <td>${tec?tec.nombre:'—'}</td>
+      <td><button class="btn btn-sm" onclick="verInforme(${inf.id})"><i class="ti ti-eye"></i></button> <button class="btn btn-sm" onclick="del('informes',${inf.id},renderInformes)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td>
+    </tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">Sin informes de visita.</td></tr>'}
+    </tbody></table>`;
+}
+
+function renderNuevoInforme(){
+  if(!db.informes) db.informes=[];
+  if(!db.nextId.informe) db.nextId.informe=1;
+  const clOpts=db.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  const insOpts=db.instalaciones.map(i=>`<option value="${i.id}">${i.nombre}</option>`).join('');
+  const tOpts=db.tecnicos.map(t=>`<option value="${t.id}">${t.nombre}</option>`).join('');
+  const num='IV-'+String(db.nextId.informe).padStart(4,'0');
+  const today=new Date().toISOString().split('T')[0];
+
+  $('content').innerHTML=`<div style="max-width:780px">
+    <!-- FORMULARIO -->
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+      <p style="font-size:12px;font-weight:500;margin-bottom:12px;color:var(--text2)">Datos del informe</p>
+      <div class="form-grid">
+        <div class="field"><label>N° Informe</label><input id="iv-num" value="${num}" readonly style="font-weight:600;color:#2d6a4f"></div>
+        <div class="field"><label>Fecha de Visita</label><input type="date" id="iv-fecha" value="${today}"></div>
+        <div class="field"><label>Cliente</label><select id="iv-cliente"><option value="">Seleccionar...</option>${clOpts}</select></div>
+        <div class="field"><label>Instalación</label><select id="iv-inst"><option value="">Seleccionar...</option>${insOpts}</select></div>
+        <div class="field"><label>Ciudad</label><input id="iv-ciudad" placeholder="Ciudad de la instalación"></div>
+        <div class="field"><label>Dirección</label><input id="iv-dir" placeholder="Dirección de la instalación"></div>
+        <div class="field" style="grid-column:span 2"><label>Técnico</label><select id="iv-tec"><option value="">Seleccionar...</option>${tOpts}</select></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Descripción de instalación</label><textarea id="iv-desc" rows="3" placeholder="Describir el estado actual de la instalación, equipos presentes, configuración..."></textarea></div>
+      <div class="field" style="margin-top:10px"><label>Observaciones de la Instalación</label><textarea id="iv-obs" rows="3" placeholder="Observaciones relevantes encontradas durante la visita..."></textarea></div>
+      <div class="field" style="margin-top:10px"><label>Recomendaciones Técnicas</label><textarea id="iv-rec" rows="3" placeholder="Recomendaciones para mejorar o mantener la instalación..."></textarea></div>
+    </div>
+
+    <!-- VISTA PREVIA INFORME OFICIAL -->
+    <div class="ot-wrap">
+      <div class="ot-header" style="background:#2d6a4f">
+        <div><div class="empresa">Gotas Comunicación SPA</div><div class="sub">Av. Del Valle Sur 662 Of. 303 · Ciudad Empresarial · Huechuraba · Santiago</div></div>
+        <div class="num-orden"><div class="label">N° Informe</div><div class="num">${num}</div></div>
+      </div>
+      <div style="background:#f0f7f4;border-bottom:1px solid #c8e6c9;padding:6px 14px;font-size:11px;font-weight:700;color:#2d6a4f;text-transform:uppercase;letter-spacing:0.05em">
+        Informe Visita Terreno
+      </div>
+      <div class="ot-info">
+        <div class="ot-info-col">
+          <div class="ot-kv"><span class="k">Cliente :</span><span class="v" id="pv-cl"></span></div>
+          <div class="ot-kv"><span class="k">Instalación :</span><span class="v" id="pv-inst"></span></div>
+        </div>
+        <div class="ot-info-col">
+          <div class="ot-kv"><span class="k">Ciudad :</span><span class="v" id="pv-ciudad"></span></div>
+          <div class="ot-kv"><span class="k">Dirección :</span><span class="v" id="pv-dir"></span></div>
+        </div>
+      </div>
+      <div style="padding:6px 14px;border-bottom:1px solid #ddd">
+        <div class="ot-kv"><span class="k">Fecha de Visita :</span><span class="v" id="pv-fecha"></span></div>
+      </div>
+      <div class="ot-obs" style="border-bottom:1px solid #ddd">
+        <div class="label" style="color:#2d6a4f">Descripción de instalación</div>
+        <div class="val" id="pv-desc" style="min-height:48px"></div>
+      </div>
+      <div class="ot-obs" style="border-bottom:1px solid #ddd">
+        <div class="label" style="color:#2d6a4f">Observaciones de la Instalación</div>
+        <div class="val" id="pv-obs" style="min-height:48px"></div>
+      </div>
+      <div class="ot-obs" style="border-bottom:1px solid #ddd">
+        <div class="label" style="color:#2d6a4f">Recomendaciones Técnicas</div>
+        <div class="val" id="pv-rec" style="min-height:48px"></div>
+      </div>
+      <div class="ot-footer">
+        <div class="ot-footer-col">
+          <div class="title" style="color:#2d6a4f;border-color:#2d6a4f">Datos del Técnico</div>
+          <div class="ot-footer-kv"><span class="k">Nombre y Apellido :</span><span class="v" id="pv-tec"></span></div>
+          <div class="ot-footer-kv"><span class="k">RUT :</span><span class="v" id="pv-rut-tec"></span></div>
+          <div class="ot-footer-kv"><span class="k">Timbre Gotas :</span><span class="v" style="min-height:40px"></span></div>
+        </div>
+        <div class="ot-footer-col" style="background:#f9f9f9;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:10px;color:#999;font-style:italic">Vista previa en tiempo real</span>
+        </div>
+      </div>
+      <div class="ot-bottom" style="background:#2d6a4f">Gotas Comunicación SPA · Rut 78.253.842-K · info@gotascomunicaciones.com · +56 9 8226 7334 · www.gotascomunicaciones.com</div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" style="background:#2d6a4f;border-color:#2d6a4f" onclick="guardarInforme()"><i class="ti ti-device-floppy"></i> Guardar Informe</button>
+      <button class="btn" onclick="showView('informes')">Cancelar</button>
+    </div>
+  </div>`;
+
+  // Live bindings
+  const bv=(id,pvId)=>{const el=$(id);if(el)el.addEventListener('input',()=>{const pv=$(pvId);if(pv)pv.textContent=el.value;});};
+  bv('iv-fecha','pv-fecha'); bv('iv-ciudad','pv-ciudad'); bv('iv-dir','pv-dir');
+  bv('iv-desc','pv-desc'); bv('iv-obs','pv-obs'); bv('iv-rec','pv-rec');
+  $('iv-cliente').addEventListener('change',e=>{const cl=getCliente(parseInt(e.target.value));$('pv-cl').textContent=cl?cl.nombre:'';});
+  $('iv-inst').addEventListener('change',e=>{const i=getInstalacion(parseInt(e.target.value));$('pv-inst').textContent=i?i.nombre:'';});
+  $('iv-tec').addEventListener('change',e=>{const t=getTecnico(parseInt(e.target.value));if(t){$('pv-tec').textContent=t.nombre;$('pv-rut-tec').textContent=t.rut||'';}});
+}
+
+function guardarInforme(){
+  if(!db.informes) db.informes=[];
+  if(!db.nextId.informe) db.nextId.informe=1;
+  const fecha=$('iv-fecha').value;
+  const clienteId=parseInt($('iv-cliente').value)||null;
+  const instalacionId=parseInt($('iv-inst').value)||null;
+  const tecnicoId=parseInt($('iv-tec').value)||null;
+  const ciudad=$('iv-ciudad').value;
+  const direccion=$('iv-dir').value;
+  const descripcion=$('iv-desc').value;
+  const observaciones=$('iv-obs').value;
+  const recomendaciones=$('iv-rec').value;
+  if(!fecha||!clienteId){alert('Completa la fecha y el cliente.');return;}
+  const inf={id:db.nextId.informe,numero:'IV-'+String(db.nextId.informe).padStart(4,'0'),fecha,clienteId,instalacionId,tecnicoId,ciudad,direccion,descripcion,observaciones,recomendaciones};
+  db.informes.push(inf);db.nextId.informe++;saveDB(db);verInforme(inf.id);
+}
+
+function verInforme(id){
+  if(!db.informes) return;
+  const inf=db.informes.find(x=>x.id===id);if(!inf)return;
+  const cl=getCliente(inf.clienteId),ins=getInstalacion(inf.instalacionId),tec=getTecnico(inf.tecnicoId);
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  $('page-title').textContent='Informe '+inf.numero;
+  $('topbar-actions').innerHTML=`<button class="btn" onclick="showView('informes')"><i class="ti ti-arrow-left"></i> Volver</button><button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Imprimir</button>`;
+  $('content').innerHTML=`<div class="ot-wrap" style="max-width:780px">
+    <div class="ot-header" style="background:#2d6a4f">
+      <div><div class="empresa">Gotas Comunicación SPA</div><div class="sub">Av. Del Valle Sur 662 Of. 303 · Ciudad Empresarial · Huechuraba · Santiago</div></div>
+      <div class="num-orden"><div class="label">N° Informe</div><div class="num">${inf.numero}</div></div>
+    </div>
+    <div style="background:#f0f7f4;border-bottom:1px solid #c8e6c9;padding:7px 14px;font-size:11px;font-weight:700;color:#2d6a4f;text-transform:uppercase;letter-spacing:0.05em">
+      Informe Visita Terreno
+    </div>
+    <div class="ot-info">
+      <div class="ot-info-col">
+        <div class="ot-kv"><span class="k">Cliente :</span><span class="v">${cl?cl.nombre:''}</span></div>
+        <div class="ot-kv"><span class="k">Instalación :</span><span class="v">${ins?ins.nombre:''}</span></div>
+      </div>
+      <div class="ot-info-col">
+        <div class="ot-kv"><span class="k">Ciudad :</span><span class="v">${inf.ciudad||''}</span></div>
+        <div class="ot-kv"><span class="k">Dirección :</span><span class="v">${inf.direccion||''}</span></div>
+      </div>
+    </div>
+    <div style="padding:6px 14px;border-bottom:1px solid #ddd">
+      <div class="ot-kv"><span class="k">Fecha de Visita :</span><span class="v">${inf.fecha||''}</span></div>
+    </div>
+    <div class="ot-obs" style="border-bottom:1px solid #ddd">
+      <div class="label" style="color:#2d6a4f">Descripción de instalación</div>
+      <div class="val">${inf.descripcion||''}</div>
+    </div>
+    <div class="ot-obs" style="border-bottom:1px solid #ddd">
+      <div class="label" style="color:#2d6a4f">Observaciones de la Instalación</div>
+      <div class="val">${inf.observaciones||''}</div>
+    </div>
+    <div class="ot-obs" style="border-bottom:1px solid #ddd">
+      <div class="label" style="color:#2d6a4f">Recomendaciones Técnicas</div>
+      <div class="val">${inf.recomendaciones||''}</div>
+    </div>
+    <div class="ot-footer">
+      <div class="ot-footer-col">
+        <div class="title" style="color:#2d6a4f;border-color:#2d6a4f">Datos del Técnico</div>
+        <div class="ot-footer-kv"><span class="k">Nombre y Apellido :</span><span class="v">${tec?tec.nombre:''}</span></div>
+        <div class="ot-footer-kv"><span class="k">RUT :</span><span class="v">${tec?tec.rut||'':''}</span></div>
+        <div class="ot-footer-kv"><span class="k">Timbre Gotas :</span><span class="v" style="min-height:40px"></span></div>
+      </div>
+      <div class="ot-footer-col" style="background:#f9f9f9"></div>
+    </div>
+    <div class="ot-bottom" style="background:#2d6a4f">Gotas Comunicación SPA · Rut 78.253.842-K · info@gotascomunicaciones.com · +56 9 8226 7334 · www.gotascomunicaciones.com</div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:8px">
+    <button class="btn btn-primary" style="background:#2d6a4f;border-color:#2d6a4f" onclick="showView('nuevo-informe')"><i class="ti ti-clipboard-plus"></i> Nuevo Informe</button>
+    <button class="btn" onclick="showView('informes')">Ver todos</button>
+  </div>`;
+}
+
+// MODALS
+const MODALS={
+  cliente:{title:'Cliente',fields:(d={})=>`<div class="form-grid"><div class="field" style="grid-column:span 2"><label>Nombre / Razón social</label><input id="f-nombre" value="${d.nombre||''}"></div><div class="field"><label>RUT</label><input id="f-rut" value="${d.rut||''}"></div><div class="field"><label>Contacto</label><input id="f-contacto" value="${d.contacto||''}"></div><div class="field"><label>Teléfono</label><input id="f-telefono" value="${d.telefono||''}"></div><div class="field"><label>Email</label><input id="f-email" value="${d.email||''}"></div></div>`,
+    save:(id)=>{const d={nombre:$('f-nombre').value,rut:$('f-rut').value,contacto:$('f-contacto').value,telefono:$('f-telefono').value,email:$('f-email').value};if(!d.nombre){alert('Nombre obligatorio');return;}if(id){Object.assign(db.clientes.find(c=>c.id===id),d);}else{db.clientes.push({id:db.nextId.cliente++,...d});}saveDB(db);closeModal();renderClientes();}},
+  instalacion:{title:'Instalación',fields:(d={})=>`<div class="form-grid"><div class="field" style="grid-column:span 2"><label>Nombre</label><input id="f-nombre" value="${d.nombre||''}"></div><div class="field"><label>Cliente</label><select id="f-cid"><option value="">Seleccionar...</option>${db.clientes.map(c=>`<option value="${c.id}" ${d.clienteId===c.id?'selected':''}>${c.nombre}</option>`).join('')}</select></div><div class="field"><label>Tipo</label><input id="f-tipo" value="${d.tipo||''}"></div><div class="field" style="grid-column:span 2"><label>Dirección</label><input id="f-dir" value="${d.direccion||''}"></div><div class="field"><label>Ciudad</label><input id="f-ciudad" value="${d.ciudad||''}"></div></div>`,
+    save:(id)=>{const d={nombre:$('f-nombre').value,clienteId:parseInt($('f-cid').value)||null,tipo:$('f-tipo').value,direccion:$('f-dir').value,ciudad:$('f-ciudad').value};if(!d.nombre){alert('Nombre obligatorio');return;}if(id){Object.assign(db.instalaciones.find(i=>i.id===id),d);}else{db.instalaciones.push({id:db.nextId.instalacion++,...d});}saveDB(db);closeModal();renderInstalaciones();}},
+  equipo:{title:'Equipo',fields:(d={})=>`<div class="form-grid"><div class="field"><label>Marca</label><input id="f-marca" value="${d.marca||''}"></div><div class="field"><label>Modelo</label><input id="f-modelo" value="${d.modelo||''}"></div><div class="field"><label>Tipo</label><select id="f-tipo"><option ${d.tipo==='Portátil'?'selected':''}>Portátil</option><option ${d.tipo==='Portátil POC'?'selected':''}>Portátil POC</option><option ${d.tipo==='Móvil'?'selected':''}>Móvil</option><option ${d.tipo==='Móvil POC'?'selected':''}>Móvil POC</option><option ${d.tipo==='Repetidor'?'selected':''}>Repetidor</option><option ${d.tipo==='Batería'?'selected':''}>Batería</option><option ${d.tipo==='Cargador'?'selected':''}>Cargador</option></select></div><div class="field"><label>Banda</label><select id="f-banda"><option>UHF</option><option>VHF</option><option>POC</option><option>-</option></select></div><div class="field"><label>N° Serie</label><input id="f-serie" value="${d.serie||''}"></div><div class="field"><label>Estado</label><select id="f-estado"><option>Disponible</option><option>Arrendado</option><option>Instalado</option><option>En reparación</option><option>Vendido</option></select></div><div class="field" style="grid-column:span 2"><label>Cliente asignado</label><select id="f-cid"><option value="">Sin asignar</option>${db.clientes.map(c=>`<option value="${c.id}" ${d.clienteId===c.id?'selected':''}>${c.nombre}</option>`).join('')}</select></div></div>`,
+    save:(id)=>{const d={marca:$('f-marca').value,modelo:$('f-modelo').value,tipo:$('f-tipo').value,banda:$('f-banda').value,serie:$('f-serie').value,estado:$('f-estado').value,clienteId:parseInt($('f-cid').value)||null};if(!d.marca||!d.serie){alert('Marca y serie obligatorias');return;}if(id){Object.assign(db.equipos.find(e=>e.id===id),d);}else{db.equipos.push({id:db.nextId.equipo++,...d});}saveDB(db);closeModal();renderEquipos();}},
+  tecnico:{title:'Técnico',fields:(d={})=>`<div class="form-grid"><div class="field" style="grid-column:span 2"><label>Nombre completo</label><input id="f-nombre" value="${d.nombre||''}"></div><div class="field"><label>RUT</label><input id="f-rut" value="${d.rut||''}"></div><div class="field"><label>Cargo</label><input id="f-cargo" value="${d.cargo||''}"></div><div class="field"><label>Teléfono</label><input id="f-telefono" value="${d.telefono||''}"></div><div class="field"><label>Email</label><input id="f-email" value="${d.email||''}"></div></div>`,
+    save:(id)=>{const d={nombre:$('f-nombre').value,rut:$('f-rut').value,cargo:$('f-cargo').value,telefono:$('f-telefono').value,email:$('f-email').value};if(!d.nombre){alert('Nombre obligatorio');return;}if(id){Object.assign(db.tecnicos.find(t=>t.id===id),d);}else{db.tecnicos.push({id:db.nextId.tecnico++,...d});}saveDB(db);closeModal();renderTecnicos();}}
+};
+
+function openModal(type,id){
+  const cfg=MODALS[type];
+  const cols={cliente:db.clientes,instalacion:db.instalaciones,equipo:db.equipos,tecnico:db.tecnicos};
+  const d=id?cols[type].find(x=>x.id===id):{};
+  $('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><h2>${id?'Editar':'Nuevo'} ${cfg.title}</h2>${cfg.fields(d||{})}<div style="display:flex;gap:8px;margin-top:20px;padding-top:14px;border-top:0.5px solid var(--border)"><button class="btn btn-primary" onclick="MODALS['${type}'].save(${id||'null'})"><i class="ti ti-device-floppy"></i> Guardar</button><button class="btn" onclick="closeModal()">Cancelar</button></div></div></div>`;
+}
+function closeModal(){$('modal-container').innerHTML='';}
+function del(col,id,fn){if(!confirm('¿Eliminar este registro?'))return;if(!db[col])db[col]=[];db[col]=db[col].filter(x=>x.id!==id);saveDB(db);fn();}
+
+showView('dashboard');
+</script>
+</body>
+</html>
