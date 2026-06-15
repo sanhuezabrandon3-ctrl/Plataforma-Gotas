@@ -254,8 +254,12 @@ function renderDashboard(){
 }
 
 function renderClientes(){
+  const valorPrevio = $('sc') ? $('sc').value : '';
   $('topbar-actions').innerHTML=`<input class="search-box" id="sc" placeholder="Buscar cliente..." oninput="clientePage=1;renderClientes()"><button class="btn btn-primary" onclick="openModal('cliente')"><i class="ti ti-plus"></i> Agregar</button>`;
-  const q=($('sc')||{}).value||'';
+  if (valorPrevio) {
+  $('sc').value = valorPrevio;
+  $('sc').focus(); }
+  const q=$('sc').value||'';
   const lista=db.clientes.filter(c=>c.nombre.toLowerCase().includes(q.toLowerCase()));
   const pages=Math.ceil(lista.length/CPP)||1;
   if(clientePage>pages) clientePage=pages;
@@ -269,8 +273,12 @@ function renderClientes(){
 }
 
 function renderInstalaciones(){
+  const valorPrevio = $('si') ? $('si').value : '';
   $('topbar-actions').innerHTML=`<input class="search-box" id="si" placeholder="Buscar instalación..." oninput="instPage=1;renderInstalaciones()" style="width:200px"><button class="btn btn-primary" onclick="openModal('instalacion')"><i class="ti ti-plus"></i> Agregar</button>`;
-  const q=($('si')||{}).value||'';
+  if (valorPrevio) {
+    $('si').value = valorPrevio;
+    $('si').focus(); }
+  const q=$('si').value||'';
   const lista=db.instalaciones.filter(i=>i.nombre.toLowerCase().includes(q.toLowerCase())||(getCliente(i.clienteId)||{}).nombre?.toLowerCase().includes(q.toLowerCase()));
   const pages=Math.ceil(lista.length/CPP)||1;
   if(instPage>pages) instPage=pages;
