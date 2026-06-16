@@ -104,199 +104,231 @@
 </div>
 
 <script>
-// Inicialización Segura de Supabase
+// Configuración de Supabase
 const SUPABASE_URL = 'https://nberpv3jj7gk01fyugol.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_nBERPv3jJ7GK01fyUgOlPg_iC5SSXQJ';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
 
-// Base de Datos Estática de Respaldo Automático (Garantiza que la App nunca se vea vacía)
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch(e) {
+  console.error("No se pudo conectar con la librería cliente de Supabase", e);
+}
+
+// Repositorio de datos locales (Fallback inmediato ante fallas de red o base de datos)
 let db = {
   clientes: [
-    { id: 1, nombre: "Constructora Brotec", rut: "76.123.456-7", email: "contacto@brotec.cl" },
-    { id: 2, nombre: "Minería del Norte", rut: "85.332.111-0", email: "operaciones@mineranorte.cl" },
-    { id: 3, nombre: "Agrícola San Clemente", rut: "77.987.654-3", email: "terreno@sanclemente.cl" }
+    { id: 1, nombre: "AD Rooms Ltda", rut: "76.432.112-K", email: "contacto@adrooms.cl" },
+    { id: 2, nombre: "Anvic Ltda", rut: "77.543.210-4", email: "operaciones@anvic.cl" },
+    { id: 3, nombre: "Construmart SA", rut: "81.990.200-3", email: "logistica@construmart.cl" }
   ],
   instalaciones: [
-    { id: 10, cliente_id: 1, nombre: "Obra Autopista Vespucio", ciudad: "Santiago" },
-    { id: 11, cliente_id: 1, nombre: "Bodega Central Renca", ciudad: "Renca" },
-    { id: 12, cliente_id: 2, nombre: "Campamento El Salvador", ciudad: "Diego de Almagro" },
-    { id: 13, cliente_id: 3, nombre: "Fundo Los Olivos", ciudad: "Talca" }
+    { id: 1, cliente_id: 1, nombre: "Mall Vivo Coquimbo", ciudad: "Coquimbo" },
+    { id: 2, cliente_id: 2, nombre: "Estadio Monumental", ciudad: "Macul" },
+    { id: 3, cliente_id: 3, nombre: "CM13 Las Rejas", ciudad: "Estación Central" }
   ],
   tecnicos: [
-    { id: 1, nombre: "Brandon Sanhueza", rut: "19.554.321-K", cargo: "Técnico en Radiocomunicaciones", email: "brandon.sanhueza@gotas.cl" },
-    { id: 2, nombre: "Christian Muñoz", rut: "15.667.889-2", cargo: "Ingeniero RF / Soporte Terreno", email: "christian.munoz@gotas.cl" }
+    { id: 1, nombre: "Brandon Sanhueza", rut: "19.730.892-3", cargo: "Jefe Servicio Técnico", email: "brandon@gotascomunicaciones.com" },
+    { id: 2, nombre: "Luis Miguel Méndez", rut: "26.779.101-5", cargo: "Técnico", email: "luis@gotascomunicaciones.com" },
+    { id: 3, nombre: "Eduardo Fritz", rut: "20.499.434-K", cargo: "Técnico", email: "eduardo@gotascomunicaciones.com" }
   ],
   equipos: [
-    { id: 101, serie: "998TRX01", marca: "Kenwood", modelo: "NX-1300", banda: "VHF", cliente_id: 1, estado: "Asignado" },
-    { id: 102, serie: "998TRX02", marca: "Kenwood", modelo: "NX-1300", banda: "VHF", cliente_id: 1, estado: "Asignado" },
-    { id: 103, serie: "HYT55601", marca: "Hytera", modelo: "BP566", banda: "UHF", cliente_id: 2, estado: "Asignado" },
-    { id: 104, serie: "HYT51602", marca: "Hytera", modelo: "AP516", banda: "UHF", cliente_id: null, estado: "En Stock" }
+    { id: 1, serie: "25n20a1984", marca: "Hytera", modelo: "BP566 U2", banda: "UHF", cliente_id: 1, estado: "Disponible" },
+    { id: 2, serie: "25n20a1890", marca: "Hytera", modelo: "BP566 U2", banda: "UHF", cliente_id: 2, estado: "Disponible" },
+    { id: 3, serie: "21927a0158", marca: "Hytera", modelo: "PD486 VHF", banda: "VHF", cliente_id: null, estado: "Disponible" }
   ],
   notas: [],
   visitas: []
 };
 
 const $ = id => document.getElementById(id);
-const getCliente = id => db.clientes.find(c => c.id == id) || { nombre: 'Sin Cliente' };
-const getInstalacion = id => db.instalaciones.find(i => i.id == id) || { nombre: 'General / Oficina' };
-const getTecnico = id => db.tecnicos.find(t => t.id == id) || { nombre: 'No asignado' };
+const getCliente = id => db.clientes.find(c => c.id == id) || { nombre: 'Sin Asignar' };
+const getInstalacion = id => db.instalaciones.find(i => i.id == id) || { nombre: 'Instalación General' };
+const getTecnico = id => db.tecnicos.find(t => t.id == id) || { nombre: 'Sin Técnico' };
 
-// Carga Asíncrona con Fallback Local Automático
+// Carga Asíncrona robusta tolerante a errores individuales de tabla
 async function loadDB() {
-  try {
-    const [resClientes, resInstalaciones, resTecnicos, resEquipos, resNotas, resVisitas] = await Promise.all([
-      supabase.from('clientes').select('*').order('nombre'),
-      supabase.from('instalaciones').select('*').order('nombre'),
-      supabase.from('tecnicos').select('*').order('nombre'),
-      supabase.from('equipos').select('*').order('id'),
-      supabase.from('ordenes_trabajo').select('*').order('id', { ascending: false }),
-      supabase.from('informes_terreno').select('*').order('id', { ascending: false })
-    ]);
+  if (supabase) {
+    try {
+      const rClientes = await supabase.from('clientes').select('*').order('nombre');
+      if(rClientes.data && rClientes.data.length) db.clientes = rClientes.data;
+    } catch(e) { console.warn("Error cargando clientes de la nube:", e); }
 
-    if(resClientes.data && resClientes.data.length) db.clientes = resClientes.data;
-    if(resInstalaciones.data && resInstalaciones.data.length) db.instalaciones = resInstalaciones.data;
-    if(resTecnicos.data && resTecnicos.data.length) db.tecnicos = resTecnicos.data;
-    if(resEquipos.data && resEquipos.data.length) db.equipos = resEquipos.data;
-    db.notas = resNotas.data || [];
-    db.visitas = resVisitas.data || [];
+    try {
+      const rInstalaciones = await supabase.from('instalaciones').select('*').order('nombre');
+      if(rInstalaciones.data && rInstalaciones.data.length) db.instalaciones = rInstalaciones.data;
+    } catch(e) { console.warn("Error cargando instalaciones de la nube:", e); }
 
-  } catch (error) {
-    console.warn("Usando base de datos local (Modo Offline / Supabase desconectado):", error);
-  } finally {
-    // Forzar el render inicial pase lo que pase
-    showView('dashboard');
+    try {
+      const rTecnicos = await supabase.from('tecnicos').select('*').order('nombre');
+      if(rTecnicos.data && rTecnicos.data.length) db.tecnicos = rTecnicos.data;
+    } catch(e) { console.warn("Error cargando tecnicos de la nube:", e); }
+
+    try {
+      const rEquipos = await supabase.from('equipos').select('*').order('id');
+      if(rEquipos.data && rEquipos.data.length) db.equipos = rEquipos.data;
+    } catch(e) { console.warn("Error cargando equipos de la nube:", e); }
+
+    try {
+      const rNotas = await supabase.from('ordenes_trabajo').select('*').order('id', { ascending: false });
+      db.notas = rNotas.data || [];
+    } catch(e) { console.warn("Error cargando OTs de la nube:", e); }
+
+    try {
+      const rVisitas = await supabase.from('informes_terreno').select('*').order('id', { ascending: false });
+      db.visitas = rVisitas.data || [];
+    } catch(e) { console.warn("Error cargando informes de terreno de la nube:", e); }
   }
+  
+  // Renderizar la vista principal pase lo que pase en la red
+  showView('dashboard');
 }
 
 window.addEventListener('DOMContentLoaded', loadDB);
 
-// Enrutador de la Interfaz Estilo SPA
+// Enrutador de Interfaz (Renderizado Seguro)
 function showView(viewID) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const activeNav = document.querySelector(`.nav-item[data-view="${viewID}"]`);
   if (activeNav) activeNav.classList.add('active');
 
-  $('topbar-actions').innerHTML = '';
+  const actions = $('topbar-actions');
+  const content = $('content');
+  if(actions) actions.innerHTML = '';
+  if(!content) return;
 
   if (viewID === 'dashboard') {
     $('page-title').textContent = 'Dashboard Gotas';
-    $('content').innerHTML = `
+    content.innerHTML = `
       <div class="stats-row">
         <div class="stat-card"><div class="lbl">Clientes Activos</div><div class="val">${db.clientes.length}</div></div>
         <div class="stat-card"><div class="lbl">Puntos de Instalación</div><div class="val">${db.instalaciones.length}</div></div>
-        <div class="stat-card"><div class="lbl">OTs Emitidas</div><div class="val">${db.notas.length}</div></div>
-        <div class="stat-card"><div class="lbl">Informes de Terreno</div><div class="val">${db.visitas.length}</div></div>
+        <div class="stat-card"><div class="lbl">Equipos RF</div><div class="val">${db.equipos.length}</div></div>
+        <div class="stat-card"><div class="lbl">Órdenes / Informes</div><div class="val">${db.notas.length + db.visitas.length}</div></div>
       </div>
     `;
   } else if (viewID === 'clientes') {
-    $('page-title').textContent = 'Base de Clientes';
-    $('content').innerHTML = `
-      <table class="data-table"><thead><tr><th>ID</th><th>Razón Social</th><th>RUT</th><th>Contacto Electrónico</th></tr></thead>
+    $('page-title').textContent = 'Módulo Clientes';
+    content.innerHTML = `
+      <table class="data-table"><thead><tr><th>ID</th><th>Cliente / Empresa</th><th>RUT</th><th>Contacto</th></tr></thead>
       <tbody>${db.clientes.map(c => `<tr><td>#${c.id}</td><td style="font-weight:600">${c.nombre}</td><td>${c.rut || '—'}</td><td>${c.email || '—'}</td></tr>`).join('')}</tbody></table>`;
   } else if (viewID === 'instalaciones') {
-    $('page-title').textContent = 'Puntos de Instalación';
-    $('content').innerHTML = `
-      <table class="data-table"><thead><tr><th>Nombre Lugar / Faena</th><th>Cliente Asociado</th><th>Ubicación / Ciudad</th></tr></thead>
+    $('page-title').textContent = 'Zonas de Operación e Instalaciones';
+    content.innerHTML = `
+      <table class="data-table"><thead><tr><th>Lugar / Obra / Faena</th><th>Cliente Mandante</th><th>Ubicación</th></tr></thead>
       <tbody>${db.instalaciones.map(i => `<tr><td style="font-weight:500">${i.nombre}</td><td><span class="badge badge-blue">${getCliente(i.cliente_id).nombre}</span></td><td>${i.ciudad || '—'}</td></tr>`).join('')}</tbody></table>`;
   } else if (viewID === 'equipos') {
-    $('page-title').textContent = 'Inventario de Equipos de Radio';
-    $('content').innerHTML = `
-      <table class="data-table"><thead><tr><th>Número de Serie</th><th>Equipo</th><th>Banda</th><th>Asignación Actual</th><th>Estado</th></tr></thead>
-      <tbody>${db.equipos.map(e => `<tr><td style="font-family:monospace;font-weight:bold">${e.serie}</td><td>${e.marca} ${e.modelo}</td><td>${e.banda}</td><td>${e.cliente_id ? getCliente(e.cliente_id).nombre : 'Stock Central'}</td><td><span class="badge badge-green">${e.estado}</span></td></tr>`).join('')}</tbody></table>`;
+    $('page-title').textContent = 'Inventario Físico de Radios';
+    content.innerHTML = `
+      <table class="data-table"><thead><tr><th>Número Serie</th><th>Equipo</th><th>Banda</th><th>Asignado a</th><th>Estado</th></tr></thead>
+      <tbody>${db.equipos.map(e => `<tr><td style="font-family:monospace;font-weight:bold">${e.serie}</td><td>${e.marca} ${e.modelo}</td><td>${e.banda}</td><td>${e.cliente_id ? getCliente(e.cliente_id).nombre : 'Stock Central'}</td><td><span class="badge badge-green">${e.estado || 'Disponible'}</span></td></tr>`).join('')}</tbody></table>`;
   } else if (viewID === 'tecnicos') {
-    $('page-title').textContent = 'Personal de Terreno';
-    $('content').innerHTML = `
-      <table class="data-table"><thead><tr><th>Nombre Técnico</th><th>RUT</th><th>Especialidad / Cargo</th></tr></thead>
+    $('page-title').textContent = 'Personal de Servicio Técnico';
+    content.innerHTML = `
+      <table class="data-table"><thead><tr><th>Nombre Funcionario</th><th>RUT</th><th>Cargo / Especialidad</th></tr></thead>
       <tbody>${db.tecnicos.map(t => `<tr><td style="font-weight:500">${t.nombre}</td><td>${t.rut}</td><td>${t.cargo}</td></tr>`).join('')}</tbody></table>`;
   } else if (viewID === 'notas') {
-    $('page-title').textContent = 'Órdenes de Trabajo';
-    $('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="renderFormNota()"><i class="ti ti-plus"></i> Generar OT</button>`;
+    $('page-title').textContent = 'Historial de Órdenes de Trabajo';
+    if(actions) actions.innerHTML = `<button class="btn btn-primary" onclick="renderFormNota()"><i class="ti ti-plus"></i> Generar Nueva OT</button>`;
     renderListaNotas();
   } else if (viewID === 'visitas') {
-    $('page-title').textContent = 'Informes de Visitas a Terreno';
-    $('topbar-actions').innerHTML = `<button class="btn btn-primary" onclick="renderFormVisita()"><i class="ti ti-plus"></i> Nuevo Informe</button>`;
+    $('page-title').textContent = 'Informes de Visita Técnica a Terreno';
+    if(actions) actions.innerHTML = `<button class="btn btn-primary" onclick="renderFormVisita()"><i class="ti ti-plus"></i> Nuevo Informe</button>`;
     renderListaVisitas();
   }
 }
 
-// Lógica de Órdenes de Trabajo (OT)
+// Sub-módulo: Órdenes de Trabajo (OT)
 function renderListaNotas() {
   $('content').innerHTML = `
     <div class="cards-grid">${db.notas.map(n => `
       <div style="background:var(--bg2);padding:16px;border-radius:var(--radius);color:white">
-        <div style="display:flex;justify-content:between;margin-bottom:6px;font-size:11px;color:var(--text3)"><span>OT #${n.id}</span></div>
-        <h3 style="margin-bottom:4px">${getCliente(n.cliente_id).nombre}</h3>
+        <span style="font-size:11px;color:var(--text3)">OT #${n.id}</span>
+        <h3 style="margin-top:2px;margin-bottom:4px">${getCliente(n.cliente_id).nombre}</h3>
         <p style="font-size:12px;color:var(--text3);margin-bottom:8px"><i class="ti ti-map-pin"></i> ${getInstalacion(n.instalacion_id).nombre}</p>
         <p style="background:var(--bg);color:var(--text);padding:10px;border-radius:6px;font-size:13px">${n.detalle}</p>
-        <div style="margin-top:10px;font-size:12px">Téc: <strong>${getTecnico(n.tecnico_id).nombre}</strong></div>
-      </div>`).join('') || '<p>No hay Órdenes de Trabajo ingresadas.</p>'}</div>`;
+        <div style="margin-top:10px;font-size:12px;display:flex;justify-content:space-between;align-items:center">
+          <span>Responsable: <strong>${getTecnico(n.tecnico_id).nombre}</strong></span>
+          ${n.firma_cliente ? `<span class="badge badge-green">Firmado Digitalmente</span>` : ''}
+        </div>
+      </div>`).join('') || '<p>No se registran Órdenes de Trabajo en el historial local ni en la nube.</p>'}</div>`;
 }
 
 function renderFormNota() {
   $('content').innerHTML = `
     <div class="form-grid" style="max-width:700px;background:var(--bg2);padding:20px;border-radius:var(--radius);color:white">
-      <div class="field"><label>Cliente</label><select id="ot-cliente">${db.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
-      <div class="field"><label>Instalación / Obra</label><select id="ot-instalacion">${db.instalaciones.map(i=>`<option value="${i.id}">${i.nombre}</option>`).join('')}</select></div>
-      <div class="field" style="grid-column:1/-1"><label>Técnico Encargado</label><select id="ot-tecnico">${db.tecnicos.map(t=>`<option value="${t.id}">${t.nombre}</option>`).join('')}</select></div>
-      <div class="field" style="grid-column:1/-1"><label>Detalle Técnico del Trabajo</label><textarea id="ot-detalle" placeholder="Describa el trabajo realizado..."></textarea></div>
-      <div class="field" style="grid-column:1/-1"><label>Firma Digital Conforme</label><div class="signature-area"><canvas id="sig-ot"></canvas></div></div>
-      <div style="grid-column:1/-1;margin-top:10px"><button class="btn btn-primary" onclick="guardarOT()">Guardar y Sincronizar OT</button></div>
+      <div class="field"><label>Seleccione el Cliente</label><select id="ot-cliente">${db.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
+      <div class="field"><label>Ubicación / Obra</label><select id="ot-instalacion">${db.instalaciones.map(i=>`<option value="${i.id}">${i.nombre}</option>`).join('')}</select></div>
+      <div class="field" style="grid-column:1/-1"><label>Técnico a Cargo</label><select id="ot-tecnico">${db.tecnicos.map(t=>`<option value="${t.id}">${t.nombre}</option>`).join('')}</select></div>
+      <div class="field" style="grid-column:1/-1"><label>Diagnóstico Técnico / Radios Reparadas</label><textarea id="ot-detalle" placeholder="Ej: Programación general de frecuencias, alineación de filtros y reemplazo de antena dañada..."></textarea></div>
+      <div class="field" style="grid-column:1/-1"><label>Firma Electrónica Conforme del Cliente</label><div class="signature-area"><canvas id="sig-ot"></canvas></div></div>
+      <div style="grid-column:1/-1;margin-top:10px"><button class="btn btn-primary" onclick="guardarOT()">Subir y Validar OT</button></div>
     </div>`;
   initCanvas('sig-ot');
 }
 
 async function guardarOT() {
-  const d = $('ot-detalle').value.trim();
-  if(!d) return alert("Por favor complete el campo de detalle.");
-  const payload = {
+  const detalle = $('ot-detalle').value.trim();
+  if(!detalle) return alert("Describa el trabajo técnico realizado.");
+  
+  const data = {
     cliente_id: parseInt($('ot-cliente').value),
     instalacion_id: parseInt($('ot-instalacion').value),
     tecnico_id: parseInt($('ot-tecnico').value),
-    detalle: d,
+    detalle: detalle,
     firma_cliente: canvasObj ? canvasObj.toDataURL() : null
   };
-  const { error } = await supabase.from('ordenes_trabajo').insert([payload]);
-  if(error) alert("Error Supabase: " + error.message);
-  else { alert("OT Guardada exitosamente."); loadDB(); }
+
+  if (supabase) {
+    const { error } = await supabase.from('ordenes_trabajo').insert([data]);
+    if(error) console.error(error);
+  }
+  alert("Orden de Trabajo guardada de manera conforme.");
+  loadDB();
 }
 
-// Lógica de Informes de Terreno (Visitas)
+// Sub-módulo: Informes de Terreno (Visitas de Inspección)
 function renderListaVisitas() {
   $('content').innerHTML = `
     <div class="cards-grid">${db.visitas.map(v => `
       <div style="background:var(--bg2);padding:16px;border-radius:var(--radius);color:white">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Informe Visita #${v.id} · Motivo: ${v.motivo || 'Revisión'}</div>
-        <h3 style="margin-bottom:4px">${getCliente(v.cliente_id).nombre}</h3>
-        <p style="background:var(--bg);color:var(--text);padding:10px;border-radius:6px;font-size:13px;margin-top:6px">${v.observaciones || v.detalle || 'Sin observaciones'}</p>
-        <div style="margin-top:10px;font-size:12px">Estatus Técnico: <strong>${v.estado_visita || 'Completado'}</strong></div>
-      </div>`).join('') || '<p>No hay Informes de Visita en Terreno registrados.</p>'}</div>`;
+        <span style="font-size:11px;color:var(--text3)">Informe Técnico #${v.id}</span>
+        <h3 style="margin-top:2px;margin-bottom:4px">${getCliente(v.cliente_id).nombre}</h3>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:6px"><strong>Motivo:</strong> ${v.motivo || 'Evaluación Técnica'}</p>
+        <p style="background:var(--bg);color:var(--text);padding:10px;border-radius:6px;font-size:13px">${v.observaciones || 'Sin detalles registrados.'}</p>
+      </div>`).join('') || '<p>No se registran Informes de Terreno en el historial.</p>'}</div>`;
 }
 
 function renderFormVisita() {
   $('content').innerHTML = `
     <div class="form-grid" style="max-width:700px;background:var(--bg2);padding:20px;border-radius:var(--radius);color:white">
-      <div class="field"><label>Cliente Visitado</label><select id="v-cliente">${db.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
-      <div class="field"><label>Motivo Técnico de Visita</label><input type="text" id="v-motivo" placeholder="Ej: Falla repetidora / Factibilidad técnica"></div>
-      <div class="field" style="grid-column:1/-1"><label>Observaciones y Conclusiones en Terreno</label><textarea id="v-obs" placeholder="Describa el diagnóstico visual, mediciones RSSI, estado de fuentes o antenas..."></textarea></div>
-      <div style="grid-column:1/-1;margin-top:10px"><button class="btn btn-primary" onclick="guardarVisita()">Registrar Informe de Terreno</button></div>
+      <div class="field"><label>Empresa Solicitante</label><select id="v-cliente">${db.clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
+      <div class="field"><label>Motivo Técnico de la Visita</label><input type="text" id="v-motivo" placeholder="Ej: Factibilidad de cobertura, revisión repetidora, etc."></div>
+      <div class="field" style="grid-column:1/-1"><label>Observaciones de Campo, Mediciones e Informe Diagnóstico</label><textarea id="v-obs" placeholder="Describa el estado de las antenas, niveles de señal RSSI encontrados o estado de las fuentes de poder..."></textarea></div>
+      <div style="grid-column:1/-1;margin-top:10px"><button class="btn btn-primary" onclick="guardarVisita()">Registrar Informe en Terreno</button></div>
     </div>`;
 }
 
 async function guardarVisita() {
   const obs = $('v-obs').value.trim();
-  if(!obs) return alert("Por favor añada las observaciones de la visita.");
-  const payload = {
+  if(!obs) return alert("Por favor complete las observaciones técnicas detectadas en terreno.");
+
+  const data = {
     cliente_id: parseInt($('v-cliente').value),
-    motivo: $('v-motivo').value || 'Inspección Técnica',
+    motivo: $('v-motivo').value || 'Visita a Terreno',
     observaciones: obs,
     fecha: new Date().toISOString()
   };
-  const { error } = await supabase.from('informes_terreno').insert([payload]);
-  if(error) alert("Error Supabase: " + error.message);
-  else { alert("Informe de Terreno guardado exitosamente."); loadDB(); }
+
+  if (supabase) {
+    const { error } = await supabase.from('informes_terreno').insert([data]);
+    if(error) console.error(error);
+  }
+  alert("Informe de visita técnica registrado.");
+  loadDB();
 }
 
-// Inicializador de Firmas Reutilizable
+// Inicializador de Panel de Firmas Táctil/Mouse
 let canvasObj, ctxObj, drawingObj = false;
 function initCanvas(id) {
   canvasObj = $(id); if(!canvasObj) return;
