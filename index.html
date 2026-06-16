@@ -260,9 +260,9 @@ let db = { clientes: [], instalaciones: [], tecnicos: [], equipos: [], notas: []
 let clientePage = 1, instPage = 1; const CPP = 25;
 
 const $ = id => document.getElementById(id);
-function getCliente(id){return db.clientes.find(c=>c.id===id);}
-function getInstalacion(id){return db.instalaciones.find(i=>i.id===id);}
-function getTecnico(id){return db.tecnicos.find(t=>t.id===id);}
+function getCliente(id){ return db.clientes.find(c => c.id === parseInt(id)) || {}; }
+function getInstalacion(id){ return db.instalaciones.find(i => i.id === parseInt(id)) || {}; }
+function getTecnico(id){ return db.tecnicos.find(t => t.id === parseInt(id)) || {}; }
 
 function showView(view){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
