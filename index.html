@@ -317,37 +317,35 @@ function renderClientes(){
 
 function renderInstalaciones(){
   const valorPrevio = $('si') ? $('si').value : '';
+
   $('topbar-actions').innerHTML=`<input class="search-box" id="si" placeholder="Buscar instalación..." oninput="instPage=1;renderInstalaciones()" style="width:200px"><button class="btn btn-primary" onclick="openModal('instalacion')"><i class="ti ti-plus"></i> Agregar</button>`;
+  
   if (valorPrevio) {
     $('si').value = valorPrevio;
-    $('si').focus(); }
+    $('si').focus();
+  }
+
   const q=$('si').value||'';
-  const lista=db.instalaciones.filter(i=>i.nombre.toLowerCase().includes(q.toLowerCase())||(getCliente(i.clienteId)||{}).nombre?.toLowerCase().includes(q.toLowerCase()));
+  const lista=db.instalaciones.filter(i=>i.nombre.toLowerCase().includes(q.toLowerCase())||(getCliente(i.cliente_id)).nombre?.toLowerCase().includes(q.toLowerCase()));
   const pages=Math.ceil(lista.length/CPP)||1;
   if(instPage>pages) instPage=pages;
   const slice=lista.slice((instPage-1)*CPP,instPage*CPP);
   $('content').innerHTML=`
     <table class="data-table"><thead><tr><th>Nombre</th><th>Cliente</th><th>Dirección</th><th>Ciudad</th><th></th></tr></thead>
-    <tbody>${slice.map(i=>{const cl=getCliente(i.clienteId);return`<tr><td style="font-weight:500">${i.nombre}</td><td><span class="badge badge-blue" style="font-size:11px">${cl?cl.nombre:'—'}</span></td><td style="color:var(--text2)">${i.direccion||'—'}</td><td>${i.ciudad||'—'}</td>
+    <tbody>${slice.map(i=>{const cl=getCliente(i.cliente_id);return`<tr><td style="font-weight:500">${i.nombre}</td><td><span class="badge badge-blue" style="font-size:11px">${cl.nombre||'—'}</span></td><td style="color:var(--text2)">${i.direccion||'—'}</td><td>${i.ciudad||'—'}</td>
       <td><button class="btn btn-sm" onclick="openModal('instalacion',${i.id})"><i class="ti ti-edit"></i></button> <button class="btn btn-sm" onclick="del('instalaciones',${i.id},renderInstalaciones)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`;}).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px">Sin instalaciones.</td></tr>'}
     </tbody></table>
     <div class="pager"><button class="btn btn-sm" onclick="instPage=Math.max(1,instPage-1);renderInstalaciones()" ${instPage<=1?'disabled':''}>‹ Anterior</button><span>Página ${instPage} de ${pages} · ${lista.length} instalaciones</span><button class="btn btn-sm" onclick="instPage=Math.min(${pages},instPage+1);renderInstalaciones()" ${instPage>=pages?'disabled':''}>Siguiente ›</button></div>`;
 }
-
 function renderEquipos(){
-  $('topbar-actions').innerHTML=`<input class="search-box" id="se" placeholder="Serie o modelo..." oninput="renderEquipos()" style="width:160px">
-    <select class="filter-select" id="fe-tipo" onchange="renderEquipos()"><option value="">Todos los tipos</option>${[...new Set(db.equipos.map(e=>e.tipo))].map(t=>`<option>${t}</option>`).join('')}</select>
-    <select class="filter-select" id="fe-marca" onchange="renderEquipos()"><option value="">Todas las marcas</option>${[...new Set(db.equipos.map(e=>e.marca))].map(m=>`<option>${m}</option>`).join('')}</select>
-    <button class="btn btn-primary" onclick="openModal('equipo')"><i class="ti ti-plus"></i> Agregar</button>`;
-  const q=($('se')||{}).value||'',ft=($('fe-tipo')||{}).value||'',fm=($('fe-marca')||{}).value||'';
-  const lista=db.equipos.filter(e=>(!q||e.serie.toLowerCase().includes(q.toLowerCase())||e.modelo.toLowerCase().includes(q.toLowerCase()))&&(!ft||e.tipo===ft)&&(!fm||e.marca===fm));
-  const ec={Disponible:'badge-green',Arrendado:'badge-amber',Instalado:'badge-blue','En reparación':'badge-red',Vendido:'badge-gray'};
-  $('content').innerHTML=`<p style="font-size:12px;color:var(--text2);margin-bottom:10px">${lista.length} equipos</p>
-    <table class="data-table"><thead><tr><th>Marca</th><th>Modelo</th><th>Tipo</th><th>Banda</th><th>N° Serie</th><th>Estado</th><th>Cliente</th><th></th></tr></thead>
-    <tbody>${lista.map(e=>{const cl=getCliente(e.clienteId);return`<tr><td style="font-weight:500">${e.marca}</td><td>${e.modelo}</td><td>${e.tipo}</td><td>${e.banda||'—'}</td><td style="font-family:monospace;font-size:12px">${e.serie}</td><td><span class="badge ${ec[e.estado]||'badge-gray'}">${e.estado}</span></td><td style="font-size:12px">${cl?cl.nombre:'<span style="color:var(--text3)">—</span>'}</td><td><button class="btn btn-sm" onclick="openModal('equipo',${e.id})"><i class="ti ti-edit"></i></button></td></tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:24px">Sin resultados</td></tr>'}
+  const q=$('se')?$('se').value:'';
+  const lista=db.equipos.filter(e=>e.serie.toLowerCase().includes(q.toLowerCase())||e.modelo.toLowerCase().includes(q.toLowerCase())||(getCliente(e.cliente_id)).nombre?.toLowerCase().includes(q.toLowerCase()));
+  $('content').innerHTML=`
+    <table class="data-table"><thead><tr><th>Serie</th><th>Marca/Modelo</th><th>Tipo/Banda</th><th>Asignado a</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${lista.map(e=>{const cl=getCliente(e.cliente_id);return`<tr><td style="font-family:monospace;font-weight:bold;color:var(--text1)">${e.serie}</td><td>${e.marca} ${e.modelo}</td><td><span style="font-size:12px;color:var(--text2)">${e.tipo} / ${e.banda}</span></td><td>${cl.nombre?`<span class="badge badge-blue">${cl.nombre}</span>`:'<span style="color:var(--text3)">En Stock</span>'}</td><td><span class="badge ${e.estado==='Operativo'?'badge-green':e.estado==='En Revisión'?'badge-orange':'badge-red'}">${e.estado}</span></td>
+      <td><button class="btn btn-sm" onclick="openModal('equipo',${e.id})"><i class="ti ti-edit"></i></button> <button class="btn btn-sm" onclick="del('equipos',${e.id},renderEquipos)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`;}).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px">No se encontraron equipos</td></tr>'}
     </tbody></table>`;
 }
-
 function renderTecnicos(){
   $('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="openModal('tecnico')"><i class="ti ti-plus"></i> Agregar</button>`;
   $('content').innerHTML=`<table class="data-table"><thead><tr><th>Nombre</th><th>RUT</th><th>Cargo</th><th>Teléfono</th><th>Email</th><th></th></tr></thead>
@@ -357,11 +355,27 @@ function renderTecnicos(){
 }
 
 function renderNotas(){
-  $('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="showView('nueva-nota')"><i class="ti ti-file-plus"></i> Nueva OT</button>`;
-  $('content').innerHTML=`<table class="data-table"><thead><tr><th>N° OT</th><th>Fecha creación</th><th>Tipo</th><th>Cliente</th><th>Técnico</th><th>Estado</th><th></th></tr></thead>
-    <tbody>${db.notas.length?db.notas.slice().reverse().map(n=>{const cl=getCliente(n.clienteId);const t=getTecnico(n.tecnicoId);return`<tr><td style="font-weight:600;color:var(--info)">${n.numero}</td><td>${n.fechaCreacion}</td><td>${n.tipo}</td><td>${cl?cl.nombre:'—'}</td><td>${t?t.nombre:'—'}</td><td><span class="badge ${n.firmado?'badge-green':'badge-amber'}">${n.firmado?'Firmada':'Pendiente'}</span></td>
-      <td><button class="btn btn-sm" onclick="verNota(${n.id})"><i class="ti ti-eye"></i></button> <button class="btn btn-sm" onclick="del('notas',${n.id},renderNotas)" style="color:var(--danger)"><i class="ti ti-trash"></i></button></td></tr>`;}).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px">Sin órdenes de trabajo.</td></tr>'}
-    </tbody></table>`;
+  $('topbar-actions').innerHTML=`<button class="btn btn-primary" onclick="showView('nueva-nota')"><i class="ti ti-plus"></i> Nueva OT</button>`;
+  $('content').innerHTML=`
+    <div class="cards-grid">${db.notas.map(n=>{
+      const cl = getCliente(n.cliente_id);
+      const inst = getInstalacion(n.instalacion_id);
+      const tec = getTecnico(n.tecnico_id);
+      return `
+      <div class="card font-animation">
+        <div style="display:flex;justify-content:between;margin-bottom:12px">
+          <span style="font-size:12px;color:var(--text3)">OT #${n.id} · ${new Date(n.fecha).toLocaleDateString('es-CL')}</span>
+          <span class="badge badge-green">Sincronizado</span>
+        </div>
+        <h3 style="margin-bottom:4px;font-size:16px">${cl.nombre || 'Cliente Desconocido'}</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:8px"><i class="ti ti-map-pin"></i> ${inst.nombre || 'Sin instalación'} · ${inst.ciudad || ''}</p>
+        <p style="font-size:14px;color:var(--text1);background:var(--bg2);padding:10px;border-radius:6px;margin-bottom:12px;min-height:60px">${n.detalle}</p>
+        <div style="display:flex;justify-content:between;align-items:center;border-top:1px solid var(--border);padding-top:12px">
+          <span style="font-size:12px;color:var(--text2)">Téc: <strong>${tec.nombre || 'No asignado'}</strong></span>
+          ${n.firma_cliente ? `<img src="${n.firma_cliente}" style="height:30px;background:#fff;border:1px solid var(--border);border-radius:4px" title="Firma Cliente">` : '<span style="font-size:11px;color:var(--danger)">Sin firma</span>'}
+        </div>
+      </div>`;
+    }).join('') || '<div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:48px">No hay Órdenes de Trabajo registradas.</div>'}</div>`;
 }
 
 let sigCanvas,sigCtx,drawing=false;
