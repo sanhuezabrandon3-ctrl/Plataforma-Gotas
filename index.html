@@ -845,6 +845,31 @@ async function delRecord(tabla, id) {
 
 // ─── ARRANCAR ──────────────────────────────────────────────────────
 iniciar();
+<ul id="lista-clientes"></ul>
+
+<script>
+    
+    const supabaseUrl = https://tzboptemotfalyufgbaj.supabase.co/rest/v1/;
+    const supabaseAnonKey = sb_publishable_nBERPv3jJ7GK01fyUgOlPg_iC5SSXQJ;
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    async function cargarClientes() {
+       
+        const { data, error } = await supabase.from('clientes').select('nombre');
+        
+        if (error) {
+            console.error("Error al cargar clientes:", error);
+            return;
+        }
+      
+        const lista = document.getElementById('lista-clientes');
+        data.forEach(cliente => {
+            const li = document.createElement('li');
+            li.textContent = cliente.nombre;
+            lista.appendChild(li);
+        });
+    }
+    cargarClientes();
 </script>
 </body>
 </html>
