@@ -1,7 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = https://tzboptemotfalyufgbaj.supabase.co/rest/v1/
+        const SUPABASE_ANON_KEY = sb_publishable_nBERPv3jJ7GK01fyUgOlPg_iC5SSXQJ
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        console.log("Supabase inicializado correctamente");
+    </script>
+    
+    <meta charset="UTF-8">
+    </head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gotas Comunicación SPA — Plataforma de Gestión</title>
