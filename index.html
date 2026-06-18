@@ -853,38 +853,32 @@ async function delRecord(tabla, id) {
 
 <ul id="lista-clientes"></ul>
 
-<script>
-    // Esperamos a que la página cargue totalmente
-    window.addEventListener('load', async () => {
+    <script>
+        console.log("Iniciando carga de clientes...");
         
-        // Verificamos si supabase se cargó correctamente
-        if (typeof supabase === 'undefined') {
-            console.error("Supabase no se ha cargado. Revisa la conexión a internet o el tag del head.");
-            return;
-        }
-
         async function cargarClientes() {
-            console.log("Cargando clientes...");
-            const { data, error } = await supabase.from('clientes').select('nombre');
-            
-            if (error) {
-                console.error("Error al obtener clientes:", error.message);
-                return;
-            }
-            
-            const lista = document.getElementById('lista-clientes');
-            if (lista && data) {
-                data.forEach(cliente => {
-                    const li = document.createElement('li');
-                    li.textContent = cliente.nombre;
-                    lista.appendChild(li);
-                });
+            try {
+                const { data, error } = await supabase.from('clientes').select('nombre');
+                if (error) throw error;
+                
+                const lista = document.getElementById('lista-clientes');
+                if (lista && data) {
+                    data.forEach(cliente => {
+                        const li = document.createElement('li');
+                        li.textContent = cliente.nombre;
+                        lista.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                console.error("Error capturado en script final:", err);
             }
         }
 
-        // Ejecutamos la función
-        cargarClientes();
-    });
-</script>
+        if (typeof supabase !== 'undefined') {
+            cargarClientes();
+        } else {
+            console.error("Supabase no definido");
+        }
+    </script>
 </body>
 </html>
