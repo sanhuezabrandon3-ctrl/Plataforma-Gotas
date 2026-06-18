@@ -176,7 +176,7 @@ function loading(msg='Cargando...') {
 }
 
 // ─── CARGA INICIAL ─────────────────────────────────────────────────
-async function iniciar() {
+async function () {
   try {
     const [rc, ri, rt, re, ro, rinf] = await Promise.all([
       sb.from('clientes').select('*').order('nombre'),
@@ -259,7 +259,7 @@ function renderDashboard() {
 
 async function recargarTodo() {
   loading('Actualizando datos...');
-  await iniciar();
+  await ();
   toast('Datos actualizados ✓');
 }
 
