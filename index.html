@@ -851,29 +851,40 @@ async function delRecord(tabla, id) {
   rerender[tabla]?.();
 }
 
-// ─── ARRANCAR ────────────────────────────────────────────────────── 
-
 <ul id="lista-clientes"></ul>
 
 <script>
-    async function cargarClientes() {
-        console.log("Cargando clientes...");
-        const { data, error } = await supabase.from('clientes').select('nombre');
+    // Esperamos a que la página cargue totalmente
+    window.addEventListener('load', async () => {
         
-        if (error) {
-            console.error("Error:", error);
+        // Verificamos si supabase se cargó correctamente
+        if (typeof supabase === 'undefined') {
+            console.error("Supabase no se ha cargado. Revisa la conexión a internet o el tag del head.");
             return;
         }
-        
-        const lista = document.getElementById('lista-clientes');
-        data.forEach(cliente => {
-            const li = document.createElement('li');
-            li.textContent = cliente.nombre;
-            lista.appendChild(li);
-        });
-    }
 
-    cargarClientes();
+        async function cargarClientes() {
+            console.log("Cargando clientes...");
+            const { data, error } = await supabase.from('clientes').select('nombre');
+            
+            if (error) {
+                console.error("Error al obtener clientes:", error.message);
+                return;
+            }
+            
+            const lista = document.getElementById('lista-clientes');
+            if (lista && data) {
+                data.forEach(cliente => {
+                    const li = document.createElement('li');
+                    li.textContent = cliente.nombre;
+                    lista.appendChild(li);
+                });
+            }
+        }
+
+        // Ejecutamos la función
+        cargarClientes();
+    });
 </script>
 </body>
 </html>
