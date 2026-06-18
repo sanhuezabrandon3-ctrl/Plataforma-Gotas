@@ -176,7 +176,7 @@ function loading(msg='Cargando...') {
 }
 
 // ─── CARGA INICIAL ─────────────────────────────────────────────────
-async function () {
+async function() {
   try {
     const [rc, ri, rt, re, ro, rinf] = await Promise.all([
       sb.from('clientes').select('*').order('nombre'),
