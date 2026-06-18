@@ -178,27 +178,32 @@ function loading(msg='Cargando...') {
 // ─── CARGA INICIAL ─────────────────────────────────────────────────
 async function iniciar() {
     console.log("Iniciando aplicación...");
-  }
-  try {
-    const [rc, ri, rt, re, ro, rinf] = await Promise.all([
-      sb.from('clientes').select('*').order('nombre'),
-      sb.from('instalaciones').select('*').order('nombre'),
-      sb.from('tecnicos').select('*').order('nombre'),
-      sb.from('equipos').select('*').order('marca'),
-      sb.from('ordenes').select('*').order('created_at', {ascending:false}),
-      sb.from('informes').select('*').order('created_at', {ascending:false}),
-    ]);
-    clientes    = rc.data  || [];
-    instalaciones = ri.data || [];
-    tecnicos    = rt.data  || [];
-    equipos     = re.data  || [];
-    ordenes     = ro.data  || [];
-    informes    = rinf.data || [];
-    showView('dashboard');
-  } catch(e) {
-    $('content').innerHTML = `<div class="loading" style="color:red"><i class="ti ti-alert-circle"></i> Error al conectar con Supabase. Verifica tu conexión.</div>`;
-  }
-}
+    
+    try {
+        const [rc, ri, rt, re, ro, rinf] = await Promise.all([
+            sb.from('clientes').select('*').order('nombre'),
+            sb.from('instalaciones').select('*').order('nombre'),
+            sb.from('tecnicos').select('*').order('nombre'),
+            sb.from('equipos').select('*').order('marca'),
+            sb.from('ordenes').select('*').order('created_at', {ascending:false}),
+            sb.from('informes').select('*').order('created_at', {ascending:false}),
+        ]);
+        
+        clientes      = rc.data  || [];
+        instalaciones = ri.data || [];
+        tecnicos      = rt.data  || [];
+        equipos       = re.data  || [];
+        ordenes       = ro.data  || [];
+        informes      = rinf.data || [];
+        showView('dashboard');
+    } catch(e) {
+        console.error("Error al conectar:", e);
+        $('content').innerHTML = `<div class="loading" style="color:red"><i class="ti ti-alert-circle"></i> Error al conectar con Supabase.</div>`;
+    }
+} 
+
+
+iniciar();
 
 // ─── HELPERS ───────────────────────────────────────────────────────
 const getCliente     = id => clientes.find(c => c.id === id);
