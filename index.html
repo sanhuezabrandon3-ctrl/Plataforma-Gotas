@@ -845,6 +845,17 @@ async function delRecord(tabla, id) {
 
 // ─── ARRANCAR ──────────────────────────────────────────────────────
 iniciar();
+<script>
+  async function probarConexion() {
+    try {
+      const { data, error } = await supabase.from('clientes').select('nombre').limit(1);
+      if (error) throw error;
+      console.log("¡Conexión exitosa! Cliente encontrado:", data);
+    } catch (err) {
+      console.error("Error al conectar:", err.message);
+    }
+  }
+  probarConexion();
 </script>
 </body>
 </html>
