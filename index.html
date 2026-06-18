@@ -8,11 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script>
-        // CONFIGURACIÓN: Reemplaza con tus llaves reales
         const SUPABASE_URL = 'https://tzboptemotfalyufgbaj.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_nBERPv3jJ7GK01fyUgOlPg_iC5SSXQJ';
-        
-        // Inicializar cliente
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </script>
 </head>
@@ -22,7 +19,6 @@
     <ul id="lista-clientes"></ul>
 
     <script>
-        // Función para cargar clientes
         async function cargarClientes() {
             try {
                 console.log("Conectando con Supabase...");
@@ -31,7 +27,7 @@
                 if (error) throw error;
                 
                 const lista = document.getElementById('lista-clientes');
-                lista.innerHTML = ""; // Limpiar lista antes de cargar
+                lista.innerHTML = "";
                 
                 if (data && data.length > 0) {
                     data.forEach(cliente => {
@@ -47,8 +43,6 @@
                 document.getElementById('lista-clientes').innerHTML = "<li>Error al cargar datos.</li>";
             }
         }
-
-        // Ejecutar al cargar la página
         window.addEventListener('load', cargarClientes);
     </script>
 
