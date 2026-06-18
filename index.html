@@ -849,20 +849,16 @@ async function delRecord(tabla, id) {
 <ul id="lista-clientes"></ul>
 
 <script>
-    // Ya no necesitas declarar 'supabase' de nuevo porque ya lo hiciste arriba
     async function cargarClientes() {
-        console.log("Conectando con Supabase..."); // Esto es lo que verás en la consola
-        
+        console.log("Cargando clientes...");
         const { data, error } = await supabase.from('clientes').select('nombre');
         
         if (error) {
-            console.error("Error al cargar clientes:", error);
+            console.error("Error:", error);
             return;
         }
         
         const lista = document.getElementById('lista-clientes');
-        lista.innerHTML = ""; // Limpiar antes de llenar
-        
         data.forEach(cliente => {
             const li = document.createElement('li');
             li.textContent = cliente.nombre;
@@ -870,7 +866,6 @@ async function delRecord(tabla, id) {
         });
     }
 
-    // Llamamos a la función
     cargarClientes();
 </script>
 </body>
