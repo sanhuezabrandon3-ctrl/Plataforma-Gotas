@@ -846,16 +846,19 @@ async function delRecord(tabla, id) {
 // ─── ARRANCAR ──────────────────────────────────────────────────────
 iniciar();
 <script>
-  async function probarConexion() {
-    try {
-      const { data, error } = await supabase.from('clientes').select('nombre').limit(1);
-      if (error) throw error;
-      console.log("¡Conexión exitosa! Cliente encontrado:", data);
-    } catch (err) {
-      console.error("Error al conectar:", err.message);
+    // 1. Configuración (Aquí pones tus llaves)
+    const supabaseUrl = 'TU_URL_DE_SUPABASE';
+    const supabaseAnonKey = 'TU_ANON_KEY';
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    // 2. Función para cargar tus datos
+    async function cargarMenu() {
+        const { data, error } = await supabase.from('clientes').select('nombre');
+        // ... aquí pondrías el código para que esos nombres aparezcan en tu menú ...
     }
-  }
-  probarConexion();
+
+    // 3. Llamar a la función cuando la página abra
+    cargarMenu();
 </script>
 </body>
 </html>
