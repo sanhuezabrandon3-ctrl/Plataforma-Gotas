@@ -149,8 +149,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
+    // Usa comillas simples para envolver tus valores
     const SUPABASE_URL = 'https://tzboptemotfalyufgbaj.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_nBERPv3jJ7GK01fyUgOlPg_iC5SSXQJ';
+    
+    // Aquí inicializamos el cliente una sola vez
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 
@@ -846,8 +849,9 @@ async function delRecord(tabla, id) {
 <ul id="lista-clientes"></ul>
 
 <script>
+    // Ya no necesitas declarar 'supabase' de nuevo porque ya lo hiciste arriba
     async function cargarClientes() {
-        console.log("Conectando con Supabase..."); 
+        console.log("Conectando con Supabase..."); // Esto es lo que verás en la consola
         
         const { data, error } = await supabase.from('clientes').select('nombre');
         
@@ -857,7 +861,7 @@ async function delRecord(tabla, id) {
         }
         
         const lista = document.getElementById('lista-clientes');
-        lista.innerHTML = ""; 
+        lista.innerHTML = ""; // Limpiar antes de llenar
         
         data.forEach(cliente => {
             const li = document.createElement('li');
@@ -865,6 +869,8 @@ async function delRecord(tabla, id) {
             lista.appendChild(li);
         });
     }
+
+    // Llamamos a la función
     cargarClientes();
 </script>
 </body>
