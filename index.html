@@ -173,7 +173,7 @@ function loading(msg='Cargando...'){
 // ─── CARGA INICIAL ─────────────────────────────────────────────────
 async function iniciar(){
   try{
-    const [rc,ri,rt,re,ro,rinf] = await Promise.all([
+    const [rc,ri,rt,re,ro,rinf]=await Promise.all([
       sb.from('clientes').select('*').order('nombre'),
       sb.from('instalaciones').select('*').order('nombre'),
       sb.from('tecnicos').select('*').order('nombre'),
@@ -181,28 +181,17 @@ async function iniciar(){
       sb.from('ordenes').select('*').order('created_at',{ascending:false}),
       sb.from('informes').select('*').order('created_at',{ascending:false}),
     ]);
-
-    // Verificar errores en TODAS las tablas
-    if(rc.error) throw new Error('clientes: '+rc.error.message);
-    if(ri.error) throw new Error('instalaciones: '+ri.error.message);
-    if(rt.error) throw new Error('tecnicos: '+rt.error.message);
-    if(re.error) throw new Error('equipos: '+re.error.message);
-    if(ro.error) throw new Error('ordenes: '+ro.error.message);
-    if(rinf.error) throw new Error('informes: '+rinf.error.message);
-
-    clientes      = rc.data  || [];
-    instalaciones = ri.data  || [];
-    tecnicos      = rt.data  || [];
-    equipos       = re.data  || [];
-    ordenes       = ro.data  || [];
-    informes      = rinf.data || [];
+    if(rc.error) throw rc.error;
+    clientes=rc.data||[];
+    instalaciones=ri.data||[];
+    tecnicos=rt.data||[];
+    equipos=re.data||[];
+    ordenes=ro.data||[];
+    informes=rinf.data||[];
     showView('dashboard');
   }catch(e){
     console.error('Error Supabase:',e);
-    $('content').innerHTML=`<div class="loading" style="color:red">
-      <i class="ti ti-alert-circle"></i> Error: ${e.message}
-      <br><br><button class="btn btn-primary" onclick="iniciar()">Reintentar</button>
-    </div>`;
+    $('content').innerHTML=`<div class="loading" style="color:red"><i class="ti ti-alert-circle"></i> Error al conectar: ${e.message||e}.<br><br><button class="btn btn-primary" onclick="iniciar()">Reintentar</button></div>`;
   }
 }
 
