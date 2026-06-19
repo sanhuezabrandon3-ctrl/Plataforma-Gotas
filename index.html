@@ -214,14 +214,38 @@ function nextNumero(lista,prefijo){
 }
 
 // ─── VISTAS ────────────────────────────────────────────────────────
-function showView(view){
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  const nav=document.querySelector(`[data-view="${view}"]`);
-  if(nav) nav.classList.add('active');
-  const titles={dashboard:'Dashboard',clientes:'Clientes',instalaciones:'Instalaciones',equipos:'Equipos',tecnicos:'Técnicos',notas:'Órdenes de Trabajo','nueva-nota':'Nueva Orden de Trabajo',informes:'Informes de Visita','nuevo-informe':'Nuevo Informe de Visita'};
-  $('page-title').textContent=titles[view]||view;
-  $('topbar-actions').innerHTML='';
-  ({dashboard:renderDashboard,clientes:renderClientes,instalaciones:renderInstalaciones,equipos:renderEquipos,tecnicos:renderTecnicos,notas:renderNotas,'nueva-nota':renderNuevaNota,informes:renderInformes,'nuevo-informe':renderNuevoInforme})[view]?.();
+function showView(view) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.querySelector(`[data-view="${view}"]`);
+  if (nav) nav.classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard', clientes: 'Clientes', instalaciones: 'Instalaciones',
+    equipos: 'Equipos', tecnicos: 'Técnicos', notas: 'Órdenes de Trabajo',
+    'nueva-nota': 'Nueva Orden de Trabajo', informes: 'Informes de Visita',
+    'nuevo-informe': 'Nuevo Informe de Visita'
+  };
+
+  $('page-title').textContent = titles[view] || view;
+  $('topbar-actions').innerHTML = '';
+
+  // AJUSTE: Mapeo de funciones
+  const views = {
+    dashboard: renderDashboard, clientes: renderClientes,
+    instalaciones: renderInstalaciones, equipos: renderEquipos,
+    tecnicos: renderTecnicos, notas: renderNotas,
+    'nueva-nota': renderNuevaNota, informes: renderInformes,
+    'nuevo-informe': renderNuevoInforme
+  };
+
+  // Ejecución segura
+  if (views[view]) {
+    // Si la vista requiere datos, verificamos que no estén vacíos 
+    // o simplemente ejecutamos el render
+    views[view]();
+  } else {
+    console.warn("Vista no encontrada:", view);
+  }
 }
 
 function renderDashboard(){
